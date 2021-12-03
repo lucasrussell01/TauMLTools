@@ -1,5 +1,6 @@
 Setup:
     n_tau                :  250 # number of candidates in one batch
+    n_data               :  30 
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
@@ -12,9 +13,9 @@ Setup:
     tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet" }
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
-    input_dir            : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
-    input_spectrum       : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
-    target_spectrum      : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    input_dir            : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
+    input_spectrum       : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
+    target_spectrum      : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
 
@@ -58,9 +59,9 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 80000
-    n_batches_val        : 80000
-    n_batches_log        : 1000 # monitor every n batches in tensorboard
+    n_batches            : 100
+    n_batches_val        : 100
+    n_batches_log        : 10 # monitor every n batches in tensorboard
     epoch                : 0
     n_epochs             : 1
     validation_split     : 0.3

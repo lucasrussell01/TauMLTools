@@ -15,7 +15,7 @@ print("Compiling Setup classes...")
 
 with open(os.path.abspath( "../configs/training_v1.yaml")) as f:
     config = yaml.safe_load(f)
-R.gInterpreter.Declare(config_parse.create_scaling_input("../configs/scaling_params_v1.json", config, verbose=False))
+R.gInterpreter.Declare(config_parse.create_scaling_input("../configs/ShuffleMergeSpectral_trainingSamples-2_files_0_50.json", config, verbose=False))
 R.gInterpreter.Declare(config_parse.create_settings(config, verbose=False))
 
 print("Compiling DataLoader_main...")
