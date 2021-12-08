@@ -8,6 +8,13 @@ import os
 import yaml
 from glob import glob
 import yaml
+from DataLoader import DataLoader as DL
+
+def ListToVector(l, elem_type):
+    vec = R.std.vector(elem_type)()
+    for elem in l:
+        vec.push_back(elem)
+    return vec
 
 R.gROOT.ProcessLine(".include ../../..")
 
@@ -57,7 +64,14 @@ for root, dirs, files in os.walk(os.path.abspath(R.Setup.input_dir)):
     for file in files:
         input_files.append(os.path.join(root, file))
 
-data_loader = R.DataLoader()
+
+data_input_files = []
+for root, dirs, files in os.walk(os.path.abspath(R.Setup.data_input_dir)):
+    for file in files:
+        data_input_files.append(os.path.join(root, file))
+real_data = ListToVector(data_input_files, "string")
+
+data_loader = R.DataLoader(real_data) #?? need to define real_data
 
 n_batches = 1000
 n_batches_store = 5
@@ -85,7 +99,7 @@ def getgrid(_obj_grid, _inner):
     return _X
 
 c = 0
-data_loader.ReadFile(R.std.string(input_files[c]), 0, -1)
+data_loader.ReadFile(R.std.string(input_files[c]), 0, -1) #input data files
 c+=1
 
 for i in range(n_batches):

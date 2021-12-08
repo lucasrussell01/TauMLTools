@@ -3,6 +3,12 @@ import glob
 
 from DataLoaderBase import *
 
+def ListToVector(l, elem_type):
+    vec = ROOT.std.vector(elem_type)()
+    for elem in l:
+        vec.push_back(elem)
+    return vec
+
 def LoaderThread(queue_out,
                  queue_files,
                  input_grids,
@@ -85,13 +91,20 @@ class DataLoader (DataLoaderBase):
         self.n_cells = { 'inner': self.n_inner_cells, 'outer': self.n_outer_cells }
         self.model_name       = self.config["SetupNN"]["model_name"]
 
-        data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root')
+        data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') 
         self.train_files, self.val_files = \
              np.split(data_files, [int(len(data_files)*(1-self.validation_split))])
-
+        
         print("Files for training:", len(self.train_files))
         print("Files for validation:", len(self.val_files))
 
+        real_data_files = glob.glob(f'{self.config["Setup"]["data_input_dir"]}/*.root') #REAL DATA
+        self.real_train_files, self.real_val_files = \
+             np.split(real_data_files, [int(len(real_data_files)*(1-self.validation_split))])
+        self.real_data = ListToVector(real_data_files, "std::string")
+    
+    def data_return_test(self):
+        return self.real_data
 
     def get_generator(self, primary_set = True, return_truth = True, return_weights = False):
 

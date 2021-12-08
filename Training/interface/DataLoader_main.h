@@ -147,7 +147,7 @@ public:
     using TauTuple = tau_tuple::TauTuple;
     using LorentzVectorM = ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double>>;
 
-    DataLoader() :
+    DataLoader(const std::vector<std::string> &real_data) :  // made function of data files //add ntuple for data and current position
         // current_entry(start_dataset),
         innerCellGridRef(n_inner_cells, n_inner_cells, inner_cell_size, inner_cell_size),
         outerCellGridRef(n_outer_cells, n_outer_cells, outer_cell_size, outer_cell_size),
@@ -171,6 +171,15 @@ public:
 
       auto file_input = std::make_shared<TFile>(input_spectrum.c_str());
       auto file_target = std::make_shared<TFile>(target_spectrum.c_str());
+
+      // convert real data to tuple
+      realtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", real_data);
+      data_current_entry = 0;
+      if (realtauTuple->GetEntries()==0){ //check tuple isn't empty
+        throw std::runtime_error("Real Tau Tuple is Empty!");
+      }
+      
+
 
       Histogram_2D target_histogram("target", yaxis, xmin, xmax);
       Histogram_2D input_histogram ("input" , yaxis, xmin, xmax);
@@ -208,7 +217,7 @@ public:
         tauTuple.reset();
         file = std::make_unique<TFile>(file_name.c_str());
         tauTuple = std::make_unique<tau_tuple::TauTuple>(file.get(), true);
-        current_entry = start_file;
+        current_entry = start_file; //should I add a read data file? Or make a new function
         end_entry = tauTuple->GetEntries();
         if(end_file!=-1) end_entry = std::min(end_file, end_entry);
         hasFile = true;
@@ -230,36 +239,72 @@ public:
           hasData = true;
         }
         while(tau_i < n_tau) {
-          if(current_entry == end_entry) {
-            hasFile = false;
-            return false;
-          }
-          tauTuple->GetEntry(current_entry);
-          auto& tau = const_cast<tau_tuple::Tau&>(tauTuple->data());
-
-          const auto gen_match = analysis::GetGenLeptonMatch(tau);
-          const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
-          bool tau_is_set = false;
-
-          if (gen_match){
-            if (recompute_tautype){
-              tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+          if(tau_i < n_data) {
+            if(data_current_entry == realtauTuple->GetEntries()) { //adapt to current tau entry
+              data_current_entry = 0;//reset to zero
             }
+            realtauTuple->GetEntry(data_current_entry); //adapt to current real tau entry
+            auto& tau = const_cast<tau_tuple::Tau&>(realtauTuple->data()); 
 
-            // skip event if it is not tau_e, tau_mu, tau_jet or tau_h
-            if ( tau_types_names.find(tau.tauType) != tau_types_names.end() ) {
-              data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
-              data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // filling weights
-              FillTauBranches(tau, tau_i);
-              FillCellGrid(tau, tau_i, innerCellGridRef, true);
-              FillCellGrid(tau, tau_i, outerCellGridRef, false);
+            const auto gen_match = analysis::GetGenLeptonMatch(tau);
+            const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
+            bool tau_is_set = false;
+
+            if (gen_match){
+              if (recompute_tautype){
+                tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+              }
+
+              // skip event if it is not tau_e, tau_mu, tau_jet or tau_h
+              if ( tau.tauType == static_cast<int>(analysis::TauType::emb_tau) ) { //embeded tau type
+                //std::cout << "Reached tau type loop\n";
+                data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
+                //std::cout << "Labels Filled\n";
+                data->weight.at(tau_i) = 1; // filling weights
+                //std::cout << "Weights filled\n";
+                FillTauBranches(tau, tau_i);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true);
+                FillCellGrid(tau, tau_i, outerCellGridRef, false);
+                ++tau_i;
+                //std::cout << "Tau Index Incremented\n";
+                tau_is_set = true;
+              }
+            }
+            if (!tau_is_set && include_mismatched)
               ++tau_i;
-              tau_is_set = true;
+            ++data_current_entry; 
+          } else {
+            if(current_entry == end_entry) {
+              hasFile = false;
+              return false;
             }
+            tauTuple->GetEntry(current_entry);
+            auto& tau = const_cast<tau_tuple::Tau&>(tauTuple->data());
+
+            const auto gen_match = analysis::GetGenLeptonMatch(tau);
+            const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
+            bool tau_is_set = false;
+
+            if (gen_match){
+              if (recompute_tautype){
+                tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+              }
+
+              // skip event if it is not tau_e, tau_mu, tau_jet or tau_h
+              if ( tau_types_names.find(tau.tauType) != tau_types_names.end() ) {
+                data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
+                data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // filling weights
+                FillTauBranches(tau, tau_i);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true);
+                FillCellGrid(tau, tau_i, outerCellGridRef, false);
+                ++tau_i;
+                tau_is_set = true;
+              }
+            }
+            if (!tau_is_set && include_mismatched)
+              ++tau_i;
+            ++current_entry;
           }
-          if (!tau_is_set && include_mismatched)
-            ++tau_i;
-          ++current_entry;
         }
         fullData = true;
         return true;
@@ -890,6 +935,7 @@ private:
 
   Long64_t end_entry;
   Long64_t current_entry; // number of the current entry in the file
+  Long64_t data_current_entry; 
   Long64_t current_tau; // number of the current tau candidate
   Long64_t tau_i;
   const CellGrid innerCellGridRef, outerCellGridRef;
@@ -901,6 +947,7 @@ private:
 
   std::unique_ptr<TFile> file; // to open with one file
   std::unique_ptr<TauTuple> tauTuple;
+  std::unique_ptr<TauTuple> realtauTuple; //declare real tuple
   std::unique_ptr<Data> data;
   std::unordered_map<int ,std::shared_ptr<TH2D>> hist_weights;
 

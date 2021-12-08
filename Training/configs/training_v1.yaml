@@ -1,6 +1,6 @@
 Setup:
     n_tau                :  250 # number of candidates in one batch
-    n_data               :  30 
+    n_data               :  30 # number of real tau candidates 
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
@@ -10,10 +10,11 @@ Setup:
 
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
-    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet" }
+    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet" } #add emb_tau
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
     input_dir            : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
+    data_input_dir       : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D"
     input_spectrum       : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
     target_spectrum      : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
     weight_thr           : 100000.0
@@ -66,7 +67,7 @@ SetupNN:
     n_epochs             : 1
     validation_split     : 0.3
     max_queue_size       : 10
-    n_load_workers       : 4
+    n_load_workers       : 1
     input_grids          : [
                             [ GridGlobal, PfCand_electron, PfCand_gamma, Electron ], # e-gamma
                             [ GridGlobal, PfCand_muon, Muon ], # muons
