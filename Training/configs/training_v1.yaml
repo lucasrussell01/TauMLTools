@@ -10,13 +10,18 @@ Setup:
 
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
-    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet" } #add emb_tau
+    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet"} # , "6":"emb_tau" } #add emb_tau
+    data_tau_types_names : {"6":"emb_tau" }
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
     input_dir            : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
-    data_input_dir       : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D"
     input_spectrum       : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
     target_spectrum      : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
+    
+    data_input_dir       : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D"
+    data_input_spectrum  : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root" 
+    data_target_spectrum : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root"  
+   
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
 

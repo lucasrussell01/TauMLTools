@@ -172,14 +172,6 @@ public:
       auto file_input = std::make_shared<TFile>(input_spectrum.c_str());
       auto file_target = std::make_shared<TFile>(target_spectrum.c_str());
 
-      // convert real data to tuple
-      realtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", real_data);
-      data_current_entry = 0;
-      if (realtauTuple->GetEntries()==0){ //check tuple isn't empty
-        throw std::runtime_error("Real Tau Tuple is Empty!");
-      }
-      
-
 
       Histogram_2D target_histogram("target", yaxis, xmin, xmax);
       Histogram_2D input_histogram ("input" , yaxis, xmin, xmax);
@@ -208,7 +200,49 @@ public:
         input_histogram .reset();
       }
       MaxDisbCheck(hist_weights, weight_thr);
+      
+      // #### REAL DATA ####
+      
+      // convert real data to tuple
+      realtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", real_data);
+      data_current_entry = 0;
+      if (realtauTuple->GetEntries()==0){ //check tuple isn't empty
+        throw std::runtime_error("Real Tau Tuple is Empty!");
+      }
+      auto data_file_input = std::make_shared<TFile>(data_input_spectrum.c_str());
+      auto data_file_target = std::make_shared<TFile>(data_target_spectrum.c_str());
+      std::cout << "Data spectra imported\n";
+
+      Histogram_2D data_target_histogram("target", yaxis, xmin, xmax);
+      Histogram_2D data_input_histogram ("input" , yaxis, xmin, xmax);
+      for (int i = 0; i < xaxis_list.size(); i++){
+          data_target_histogram.add_x_binning_by_index(i, xaxis_list[i]);
+          data_input_histogram .add_x_binning_by_index(i, xaxis_list[i]);
+      }
+      std::cout << "Data Histograms created\n";
+
+      std::shared_ptr<TH2D> data_target_th2d = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_target->Get("eta_pt_hist_emb_tau")));
+      if (!data_target_th2d) throw std::runtime_error("Data Target histogram could not be loaded");
+      
+      for( auto const& [data_tau_type, data_tau_name] : data_tau_types_names)
+      {
+        std::shared_ptr<TH2D> data_input_th2d  = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_input ->Get(("eta_pt_hist_"+data_tau_name).c_str())));
+        if (!data_input_th2d) throw std::runtime_error("Data Input histogram could not be loaded for tau type "+data_tau_name);
+        data_target_histogram.th2d_add(*(data_target_th2d.get()));
+        data_input_histogram .th2d_add(*(data_input_th2d .get()));
+
+        data_target_histogram.divide(data_input_histogram);
+        hist_weights[data_tau_type] = std::make_shared<TH2D>(data_target_histogram.get_weights_th2d(
+            ("w_1_"+data_tau_name).c_str(),
+            ("w_1_"+data_tau_name).c_str()
+        ));
+
+        data_target_histogram.reset();
+        data_input_histogram .reset();
+      }
+      std::cout << "Histograms processed \n";
     }
+    //MaxDisbCheck(hist_weights, weight_thr); //NEEDS FIX
 
     DataLoader(const DataLoader&) = delete;
     DataLoader& operator=(const DataLoader&) = delete;
@@ -256,12 +290,14 @@ public:
               }
 
               // skip event if it is not tau_e, tau_mu, tau_jet or tau_h
-              if ( tau.tauType == static_cast<int>(analysis::TauType::emb_tau) ) { //embeded tau type
+
+              if ( data_tau_types_names.find(tau.tauType) != data_tau_types_names.end() ) {
+              //if ( tau.tauType == static_cast<int>(analysis::TauType::emb_tau) ) { //embeded tau type
                 //std::cout << "Reached tau type loop\n";
                 data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
                 //std::cout << "Labels Filled\n";
-                data->weight.at(tau_i) = 1; // filling weights
-                //std::cout << "Weights filled\n";
+                data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta));//1; // filling weights
+                //std::cout << "Data Weights filled\n";
                 FillTauBranches(tau, tau_i);
                 FillCellGrid(tau, tau_i, innerCellGridRef, true);
                 FillCellGrid(tau, tau_i, outerCellGridRef, false);
