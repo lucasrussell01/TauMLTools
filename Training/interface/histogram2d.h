@@ -168,7 +168,14 @@ void Histogram_2D::divide(const Histogram_2D& histo){
     if(!check_axis(thisxaxis, xaxis)){
       throw std::logic_error("Invalid x-axis binning found for denominator in y bin n. "+std::to_string(iy)+" for Histogram_2D "+histo.name_);
     }
-
+    for (Int_t ix = 1; ix <= xhisto->GetNbinsX(); ix++){
+         if (xhisto->GetBinContent(ix) == 0){
+           std::cout << "Error in Histogram_2D::divide: " << histo.name_ << " bin eta [" 
+                     << xhisto->GetBinLowEdge(ix) << ", " << xhisto->GetBinLowEdge(ix+1) << "], pt ["
+                     << yaxis_[iy] << ", " << yaxis_[iy+1] << "] is empty" << std::endl;
+            throw std::logic_error("Empty bins detected");
+        }
+    }
     (*thisxhisto).Divide(xhisto);
   }
 }

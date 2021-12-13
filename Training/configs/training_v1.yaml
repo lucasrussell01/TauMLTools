@@ -20,8 +20,7 @@ Setup:
     
     data_input_dir       : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D"
     data_input_spectrum  : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root" 
-    data_target_spectrum : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root"  
-   
+    
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
 
@@ -55,10 +54,10 @@ Setup:
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #300-350
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #350-400
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #400-450
-      [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #450-500
+      [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 2.5], #450-500
       [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #500-600
       [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #600-700
-      [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #700-1000
+      [0.0, 0.3, 0.6, 0.9, 1.2, 2.5], #700-1000 
                             ]
     xmin                 : 0
     xmax                 : 2.5

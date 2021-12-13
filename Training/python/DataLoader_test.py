@@ -71,7 +71,7 @@ for root, dirs, files in os.walk(os.path.abspath(R.Setup.data_input_dir)):
         data_input_files.append(os.path.join(root, file))
 real_data = ListToVector(data_input_files, "string")
 
-data_loader = R.DataLoader(real_data) #?? need to define real_data
+data_loader = R.DataLoader(real_data) 
 
 n_batches = 1000
 n_batches_store = 5
