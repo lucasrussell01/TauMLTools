@@ -191,10 +191,10 @@ public:
         input_histogram .th2d_add(*(input_th2d .get()));
 
         target_histogram.divide(input_histogram);
-        hist_weights[tau_type] = std::make_shared<TH2D>(target_histogram.get_weights_th2d(
+        hist_weights[tau_type] = target_histogram.get_weights_th2d(
             ("w_1_"+tau_name).c_str(),
             ("w_1_"+tau_name).c_str()
-        ));
+        );
 
         target_histogram.reset();
         input_histogram .reset();
@@ -203,7 +203,7 @@ public:
       
       // #### REAL DATA ####
       
-      // convert real data to tuple
+      //convert real data to tuple
       realtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", real_data);
       data_current_entry = 0;
       if (realtauTuple->GetEntries()==0){ //check tuple isn't empty
@@ -212,6 +212,9 @@ public:
       auto data_file_input = std::make_shared<TFile>(data_input_spectrum.c_str());
       std::cout << "Data spectra imported\n";
       
+
+      // ****PROBLEM HERE*****
+
       for( auto const& [data_tau_type, data_tau_name] : data_tau_types_names)
       {
         std::shared_ptr<TH2D> data_input_th2d  = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_input ->Get(("eta_pt_hist_"+data_tau_name).c_str())));
@@ -220,14 +223,17 @@ public:
         input_histogram .th2d_add(*(data_input_th2d .get()));
 
         target_histogram.divide(input_histogram);
-        hist_weights[data_tau_type] = std::make_shared<TH2D>(target_histogram.get_weights_th2d(
+        hist_weights[data_tau_type] = target_histogram.get_weights_th2d(
             ("w_1_"+data_tau_name).c_str(),
             ("w_1_"+data_tau_name).c_str()
-        ));
+        );
 
         target_histogram.reset();
         input_histogram .reset();
       }
+
+      // ****PROBLEM HERE*****
+
       MaxDisbCheck(hist_weights, weight_thr);
 
       std::cout << "Histograms processed \n";
@@ -262,9 +268,8 @@ public:
           hasData = true;
         }
         while(tau_i < n_tau) {
-          std::cout<<"While loop initiated\n";
           if(tau_i < n_data) {
-            std::cout<<"reached embedded tau loop\n";
+            //std::cout<<"reached embedded tau loop\n";
             if(data_current_entry == realtauTuple->GetEntries()) { //adapt to current tau entry
               data_current_entry = 0;//reset to zero
             }
@@ -331,7 +336,7 @@ public:
             if (!tau_is_set && include_mismatched)
               ++tau_i;
             ++current_entry;
-          }
+          } 
         }
         fullData = true;
         return true;
