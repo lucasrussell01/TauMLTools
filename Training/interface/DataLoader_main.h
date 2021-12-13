@@ -213,7 +213,6 @@ public:
       std::cout << "Data spectra imported\n";
       
 
-      // ****PROBLEM HERE*****
 
       for( auto const& [data_tau_type, data_tau_name] : data_tau_types_names)
       {
@@ -231,8 +230,6 @@ public:
         target_histogram.reset();
         input_histogram .reset();
       }
-
-      // ****PROBLEM HERE*****
 
       MaxDisbCheck(hist_weights, weight_thr);
 
