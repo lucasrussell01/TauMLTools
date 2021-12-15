@@ -98,6 +98,7 @@ class DataLoader (DataLoaderBase):
         print("Files for training:", len(self.train_files))
         print("Files for validation:", len(self.val_files))
 
+        # Make changes here
         real_data_files = glob.glob(f'{self.config["Setup"]["data_input_dir"]}/*.root') #REAL DATA
         self.real_train_files, self.real_val_files = \
              np.split(real_data_files, [int(len(real_data_files)*(1-self.validation_split))])
@@ -165,7 +166,8 @@ class DataLoader (DataLoaderBase):
         >       y_pred = ...
         '''
         assert self.batch_size == 1
-        data_loader = R.DataLoader()
+        # call dataloader with embedded taus
+        data_loader = R.DataLoader(self.real_data) 
         def read_from_file(file_path):
             data_loader.ReadFile(R.std.string(file_path), 0, -1)
             while data_loader.MoveNext():

@@ -43,6 +43,7 @@ n_ele       = R.Setup.n_Electron
 n_muon      = R.Setup.n_Muon
 tau_types   = R.Setup.tau_types_names.size()
 input_files = glob(f'{R.Setup.input_dir}*.root')
+data_input_files = glob(f'{R.Setup.data_input_dir}*.root')
 
 n_grid_features = {
     "GridGlobal" : n_gridglob,
@@ -69,6 +70,7 @@ data_input_files = []
 for root, dirs, files in os.walk(os.path.abspath(R.Setup.data_input_dir)):
     for file in files:
         data_input_files.append(os.path.join(root, file))
+
 real_data = ListToVector(data_input_files, "string")
 
 data_loader = R.DataLoader(real_data) 

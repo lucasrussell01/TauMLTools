@@ -218,6 +218,10 @@ public:
       {
         std::shared_ptr<TH2D> data_input_th2d  = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_input ->Get(("eta_pt_hist_"+data_tau_name).c_str())));
         if (!data_input_th2d) throw std::runtime_error("Data Input histogram could not be loaded for tau type "+data_tau_name);
+        // TO DO: Rescale weights for embedded Taus
+        Double_t factor = target_th2d->Integral();
+        data_input_th2d->Scale(factor/data_input_th2d->Integral());
+        std::cout << "Histogram scaled\n";  
         target_histogram.th2d_add(*(target_th2d.get()));
         input_histogram .th2d_add(*(data_input_th2d .get()));
 
@@ -226,6 +230,11 @@ public:
             ("w_1_"+data_tau_name).c_str(),
             ("w_1_"+data_tau_name).c_str()
         );
+        TFile f("histos.root","new");
+        hist_weights[data_tau_type]->Write();
+        // std::unique_ptr<TFile> weight_check( TFile::Open("weight_check.root", "CREATE") );
+        // weight_check->WriteObject(&hist_weights[data_tau_type], "Weights");
+        //std::cout << hist_weights[data_tau_type] <<"\n";
 
         target_histogram.reset();
         input_histogram .reset();
@@ -277,7 +286,7 @@ public:
             const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
             bool tau_is_set = false;
 
-            if (gen_match){
+            if (gen_match && tau.tau_pt <500){
               if (recompute_tautype){
                 tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
               }
