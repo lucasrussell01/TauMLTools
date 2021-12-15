@@ -230,11 +230,8 @@ public:
             ("w_1_"+data_tau_name).c_str(),
             ("w_1_"+data_tau_name).c_str()
         );
-        TFile f("histos.root","new");
-        hist_weights[data_tau_type]->Write();
-        // std::unique_ptr<TFile> weight_check( TFile::Open("weight_check.root", "CREATE") );
-        // weight_check->WriteObject(&hist_weights[data_tau_type], "Weights");
-        //std::cout << hist_weights[data_tau_type] <<"\n";
+        //TFile f("histos.root","new");
+        //hist_weights[data_tau_type]->Write();
 
         target_histogram.reset();
         input_histogram .reset();
@@ -323,7 +320,7 @@ public:
             const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
             bool tau_is_set = false;
 
-            if (gen_match){
+            if (gen_match && tau.tau_pt <500){
               if (recompute_tautype){
                 tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
               }
