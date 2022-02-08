@@ -184,7 +184,8 @@ public:
         hist_weights[tau_type] = target_histogram.get_weights_th2d(
             ("w_1_"+tau_name).c_str(),
             ("w_1_"+tau_name).c_str()
-        );
+        ));
+        if (debug) hist_weights[tau_type]->SaveAs(("Temp_"+tau_name+".root").c_str()); // It's required that all bins are filled in these histograms; save them to check incase binning is too fine and some bins are empty
 
         target_histogram.reset();
         input_histogram .reset();

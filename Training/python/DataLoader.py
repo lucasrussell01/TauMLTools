@@ -14,6 +14,8 @@ def ListToVector(l, elem_type):
 def LoaderThread(queue_out,
                  queue_files,
                  emb_data_files,
+                 terminators,
+                 identifier,
                  input_grids,
                  batch_size,
                  n_inner_cells,
@@ -36,9 +38,6 @@ def LoaderThread(queue_out,
         X_all = GetData.getX(data, batch_size, n_grid_features, n_flat_features,
                              input_grids, n_inner_cells, n_outer_cells)
 
-        if nan_check(X_all):
-            raise RuntimeError("Terminate: nans detected in the tensor.")
-
         X_all = tuple(X_all)
 
         if return_weights:
@@ -57,7 +56,8 @@ def LoaderThread(queue_out,
 
         put_next = queue_out.put(item)
 
-    queue_out.put_terminate()
+    queue_out.put_terminate(identifier)
+    terminators[identifier].wait()
 
 class DataLoader (DataLoaderBase):
 
@@ -108,7 +108,7 @@ class DataLoader (DataLoaderBase):
         self.emb_train_files = ListToVector(emb_train_files, "string")
         self.emb_val_files = ListToVector(emb_val_files, "string")
 
-    def get_generator(self, primary_set = True, return_truth = True, return_weights = False):
+    def get_generator(self, primary_set = True, return_truth = True, return_weights = True):
 
         _files = self.train_files if primary_set else self.val_files
         emb_data_files = self.emb_train_files if primary_set else self.emb_val_files # LR: choose embedded training or validation files
@@ -118,6 +118,7 @@ class DataLoader (DataLoaderBase):
 
         n_batches = self.n_batches if primary_set else self.n_batches_val
         print("Number of workers in DataLoader: ", self.n_load_workers)
+        converter = torch_to_tf(return_truth, return_weights)
 
         def _generator():
 
@@ -127,26 +128,25 @@ class DataLoader (DataLoaderBase):
             [ queue_files.put(file) for file in _files ]
 
             queue_out = QueueEx(max_size = self.max_queue_size, max_n_puts = n_batches)
+            terminators = [ mp.Event() for _ in range(self.n_load_workers) ]
 
             processes = []
             for i in range(self.n_load_workers):
                 processes.append(
                 mp.Process(target = LoaderThread,
-                        args = (queue_out, queue_files, emb_data_files,
+                        args = (queue_out, queue_files, terminators, emb_data_files, i,
                                 self.input_grids, self.batch_size, self.n_inner_cells,
                                 self.n_outer_cells, self.n_flat_features, self.n_grid_features,
-                                self.tau_types, return_truth, return_weights))) # LR added emb_data_files
-                processes[-1].deamon = True
+                                self.tau_types, return_truth, return_weights,))) # LR added emb_data_files
                 processes[-1].start()
 
             while finish_counter < self.n_load_workers:
-
                 item = queue_out.get()
-
-                if isinstance(item, TerminateGenerator):
+                if isinstance(item, int):
                     finish_counter+=1
+                    terminators[item].set()
                 else:
-                    yield item
+                    yield converter(item)
 
             queue_out.clear()
             ugly_clean(queue_files)
@@ -223,7 +223,7 @@ class DataLoader (DataLoaderBase):
 
         return netConf
 
-    def get_input_config(self):
+    def get_input_config(self, return_truth = True, return_weights = True):
         # Input tensor shape and type
         input_shape, input_types = [], []
         input_shape.append(tuple([None, len(self.get_branches(self.config,"TauFlat"))]))
@@ -233,7 +233,13 @@ class DataLoader (DataLoaderBase):
                 n_f = sum([len(self.get_branches(self.config,cell_type)) for cell_type in f_group])
                 input_shape.append(tuple([None, self.n_cells[grid], self.n_cells[grid], n_f]))
                 input_types.append(tf.float32)
-        input_shape = tuple([tuple(input_shape),(None, self.tau_types)])
-        input_types = tuple([tuple(input_types),(tf.float32)])
+        input_shape=(tuple(input_shape),)
+        input_types=(tuple(input_types),)
+        if return_truth:
+            input_shape = input_shape + ((None, self.tau_types),)
+            input_types = input_types + (tf.float32,)
+        if return_weights:
+            input_shape = input_shape + ((None),)
+            input_types = input_types + (tf.float32,)
 
         return input_shape, input_types
