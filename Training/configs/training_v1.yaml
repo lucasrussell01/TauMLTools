@@ -1,6 +1,6 @@
 Setup:
     n_tau                :  250 # LR: total number of tau candidates in one batch
-    n_embtau             :  30 # LR: number of embedded taus per batch
+    n_embtau             :  125 # LR: number of embedded taus per batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
