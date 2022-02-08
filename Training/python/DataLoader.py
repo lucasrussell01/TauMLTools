@@ -3,14 +3,17 @@ import glob
 
 from DataLoaderBase import *
 
+# LR added ListToVector
 def ListToVector(l, elem_type):
-    vec = ROOT.std.vector(elem_type)()
+    vec = R.std.vector(elem_type)()
     for elem in l:
         vec.push_back(elem)
     return vec
 
+# LR added emb_data_files
 def LoaderThread(queue_out,
                  queue_files,
+                 emb_data_files,
                  input_grids,
                  batch_size,
                  n_inner_cells,
@@ -21,7 +24,7 @@ def LoaderThread(queue_out,
                  return_truth,
                  return_weights):
 
-    data_source = DataSource(queue_files)
+    data_source = DataSource(queue_files, emb_data_files) # LR: input embedded files
     put_next = True
 
     while put_next:
@@ -90,26 +93,25 @@ class DataLoader (DataLoaderBase):
         self.input_grids        = self.config["SetupNN"]["input_grids"]
         self.n_cells = { 'inner': self.n_inner_cells, 'outer': self.n_outer_cells }
         self.model_name       = self.config["SetupNN"]["model_name"]
-
+        
         data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') 
         self.train_files, self.val_files = \
              np.split(data_files, [int(len(data_files)*(1-self.validation_split))])
-        
+
         print("Files for training:", len(self.train_files))
         print("Files for validation:", len(self.val_files))
 
-        # Make changes here
-        real_data_files = glob.glob(f'{self.config["Setup"]["data_input_dir"]}/*.root') #REAL DATA
-        self.real_train_files, self.real_val_files = \
-             np.split(real_data_files, [int(len(real_data_files)*(1-self.validation_split))])
-        self.real_data = ListToVector(real_data_files, "std::string")
-    
-    def data_return_test(self):
-        return self.real_data
+        # LR: Embedded data imported and split here
+        emb_data_files = glob.glob(f'{self.config["Setup"]["emb_input_dir"]}/*.root') 
+        emb_train_files, emb_val_files = \
+             np.split(emb_data_files, [int(len(emb_data_files)*(1-self.validation_split))]) 
+        self.emb_train_files = ListToVector(emb_train_files, "string")
+        self.emb_val_files = ListToVector(emb_val_files, "string")
 
     def get_generator(self, primary_set = True, return_truth = True, return_weights = False):
 
         _files = self.train_files if primary_set else self.val_files
+        emb_data_files = self.emb_train_files if primary_set else self.emb_val_files # LR: choose embedded training or validation files
         if len(_files)==0:
             raise RuntimeError(("Taining" if primary_set else "Validation")+\
                                " file list is empty.")
@@ -130,10 +132,10 @@ class DataLoader (DataLoaderBase):
             for i in range(self.n_load_workers):
                 processes.append(
                 mp.Process(target = LoaderThread,
-                        args = (queue_out, queue_files,
+                        args = (queue_out, queue_files, emb_data_files,
                                 self.input_grids, self.batch_size, self.n_inner_cells,
                                 self.n_outer_cells, self.n_flat_features, self.n_grid_features,
-                                self.tau_types, return_truth, return_weights)))
+                                self.tau_types, return_truth, return_weights))) # LR added emb_data_files
                 processes[-1].deamon = True
                 processes[-1].start()
 
@@ -166,8 +168,7 @@ class DataLoader (DataLoaderBase):
         >       y_pred = ...
         '''
         assert self.batch_size == 1
-        # call dataloader with embedded taus
-        data_loader = R.DataLoader(self.real_data) 
+        data_loader = R.DataLoader(emb_data_files) # LR: Call C++ Dataloader with embedded tau files as argument 
         def read_from_file(file_path):
             data_loader.ReadFile(R.std.string(file_path), 0, -1)
             while data_loader.MoveNext():
@@ -218,6 +219,7 @@ class DataLoader (DataLoaderBase):
         ]
         netConf.n_cells = self.n_cells
         netConf.n_outputs = self.tau_types
+        netConf.first_layer_reg = self.config["SetupNN"]["first_layer_reg"] # LR: Introduced optional first layer regularisation
 
         return netConf
 

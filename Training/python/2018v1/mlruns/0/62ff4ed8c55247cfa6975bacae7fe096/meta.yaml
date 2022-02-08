@@ -1,0 +1,15 @@
+artifact_uri: file:///home/russell/TauMLTools/Training/python/2018v1/mlruns/0/62ff4ed8c55247cfa6975bacae7fe096/artifacts
+end_time: 1644310486017
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+name: ''
+run_id: 62ff4ed8c55247cfa6975bacae7fe096
+run_uuid: 62ff4ed8c55247cfa6975bacae7fe096
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1644310371926
+status: 3
+tags: []
+user_id: russell

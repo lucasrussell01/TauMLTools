@@ -1,6 +1,6 @@
 Setup:
-    n_tau                :  250 # number of candidates in one batch
-    n_data               :  30 # number of real tau candidates 
+    n_tau                :  250 # LR: total number of tau candidates in one batch
+    n_embtau             :  30 # LR: number of embedded taus per batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
@@ -10,21 +10,20 @@ Setup:
 
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
-    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet"} # , "6":"emb_tau" } #add emb_tau
-    data_tau_types_names : {"6":"emb_tau" }
+    tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet"} 
+    emb_tau_types_names  : {"6":"emb_tau" } # LR: Introduced embedded tau data type
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
     input_dir            : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
     input_spectrum       : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
     target_spectrum      : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
-    
-    data_input_dir       : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D"
-    data_input_spectrum  : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root" 
-    
+    emb_input_dir        : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D" # LR: Location of embedded tau files
+    emb_input_spectrum   : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root" # LR: Location of embedded Tau Spectrum
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
 
-    # here define variables for the Histogram_2D class
+    # here define variables for the Histogram_2D class 
+    # LR: modified bin sizes to avoid empty embededd histograms in high pT regions
     yaxis                : [
       20. , 30. , 40. , 50. , 60. , 70. , 80. , 90. , 100., 110.,
       120., 130., 140., 150., 160., 170., 180., 190., 200.,
@@ -64,7 +63,7 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 100
+    n_batches            : 1000
     n_batches_val        : 100
     n_batches_log        : 10 # monitor every n batches in tensorboard
     epoch                : 0
@@ -85,6 +84,7 @@ SetupNN:
     comp_merge_net       : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1.6, "first_layer_width": "n", "last_layer_width": 64 }
     conv_2d_net          : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": null, "window_size": 3 }
     dense_net            : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1, "first_layer_width": 200, "last_layer_width": 200, "min_n_layers": 4 }
+    first_layer_reg      :  null  # LR: Introduced optional first layer regularisation
 
 CellObjectType : [
                  GridGlobal,

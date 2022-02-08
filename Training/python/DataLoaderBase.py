@@ -64,8 +64,9 @@ class QueueEx:
             self.mp_queue.get()
 
 class DataSource:
-    def __init__(self, queue_files):
-        self.data_loader = R.DataLoader()
+    def __init__(self, queue_files, emb_data_files):
+        # LR: DataLoader intitiated with embedded data files
+        self.data_loader = R.DataLoader(emb_data_files)
         self.queue_files = queue_files
         self.require_file = True
     

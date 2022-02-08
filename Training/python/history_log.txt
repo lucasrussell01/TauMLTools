@@ -1,0 +1,104 @@
+Script started on Mon 06 Dec 2021 09:58:42 AM CET
+[1m[3m%[23m[1m[0m                                                                                                                                            ]2;x86_64-conda-linux-gnu:python[0m[23m[24m[J[9:58] [1mx86_64-conda-linux-gnu[0m:python% [Kscript history_log.txt[22Dcat errors.txt        [8D[14Dpython DataLoader_test.py > errors.txt           
+Compiling Setup classes...
+Compiling DataLoader_main...
+In file included from input_line_35:1:
+[1m./../interface/DataLoader_main.h:176:7: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'realtauTuple'[0m
+      realtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", real_data);
+[0;1;32m      ^
+[0m[1m./../interface/DataLoader_main.h:177:7: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'data_current_entry'[0m
+      data_current_entry = 0;
+[0;1;32m      ^
+[0m[1m./../interface/DataLoader_main.h:178:11: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'realtautuple'[0m
+      if (realtautuple->GetEntries()==0){ //check tuple isn't empty
+[0;1;32m          ^
+[0m[1m./../interface/DataLoader_main.h:244:16: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'data_current_entry'[0m
+            if(data_current_entry == realtautuple->GetEntries()) { //adapt to current tau entry
+[0;1;32m               ^
+[0m[1m./../interface/DataLoader_main.h:244:38: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'realtautuple'[0m
+            if(data_current_entry == realtautuple->GetEntries()) { //adapt to current tau entry
+[0;1;32m                                     ^
+[0m[1m./../interface/DataLoader_main.h:245:15: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'data_current_entry'[0m
+              data_current_entry = 0;//reset to zero
+[0;1;32m              ^
+[0m[1m./../interface/DataLoader_main.h:247:13: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'realtauTuple'[0m
+            realtauTuple->GetEntry(data_current_entry); //adapt to current real tau entry
+[0;1;32m            ^
+[0m[1m./../interface/DataLoader_main.h:247:36: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'data_current_entry'[0m
+            realtauTuple->GetEntry(data_current_entry); //adapt to current real tau entry
+[0;1;32m                                   ^
+[0m[1m./../interface/DataLoader_main.h:248:53: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'realtauTuple'[0m
+            auto& tau = const_cast<tau_tuple::Tau&>(realtauTuple->data()); //CHECK
+[0;1;32m                                                    ^
+[0m[1m./../interface/DataLoader_main.h:272:15: [0m[0;1;31merror: [0m[1muse of undeclared identifier 'data_current_entry'[0m
+            ++data_current_entry; 
+[0;1;32m              ^
+[0m *** Break *** segmentation violation
+
+
+
+===========================================================
+There was a crash.
+This is the entire stack trace of all threads:
+===========================================================
+#0  0x00007f793f45a659 in waitpid () from /lib64/libc.so.6
+#1  0x00007f793f3d7f62 in do_system () from /lib64/libc.so.6
+#2  0x00007f793f3d8311 in system () from /lib64/libc.so.6
+#3  0x00007f7938b49707 in TUnixSystem::StackTrace() () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libCore.so.6.24
+#4  0x00007f7938cf760f in (anonymous namespace)::TExceptionHandlerImp::HandleException(int) () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libcppyy_backend3_8.so.6.24
+#5  0x00007f7938b46881 in TUnixSystem::DispatchSignals(ESignals) () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libCore.so.6.24
+#6  <signal handler called>
+#7  0x00007f7935b43b84 in clang::CXXRecordDecl::getLambdaCallOperator() const () from /usr/local/miniconda3/envs/tau-ml/lib/libCling.so
+#8  0x0000000000000000 in ?? ()
+===========================================================
+
+
+The lines below might hint at the cause of the crash.
+You may get help by asking at the ROOT forum https://root.cern.ch/forum
+Only if you are really convinced it is a bug in ROOT then please submit a
+report at https://root.cern.ch/bugs Please post the ENTIRE stack trace
+from above as an attachment in addition to anything else
+that might help us fixing this issue.
+===========================================================
+#7  0x00007f7935b43b84 in clang::CXXRecordDecl::getLambdaCallOperator() const () from /usr/local/miniconda3/envs/tau-ml/lib/libCling.so
+#8  0x0000000000000000 in ?? ()
+===========================================================
+
+
+ *** Break *** segmentation violation
+
+
+
+===========================================================
+There was a crash.
+This is the entire stack trace of all threads:
+===========================================================
+#0  0x00007f793f45a659 in waitpid () from /lib64/libc.so.6
+#1  0x00007f793f3d7f62 in do_system () from /lib64/libc.so.6
+#2  0x00007f793f3d8311 in system () from /lib64/libc.so.6
+#3  0x00007f7938b49707 in TUnixSystem::StackTrace() () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libCore.so.6.24
+#4  0x00007f7938cf7490 in (anonymous namespace)::TExceptionHandlerImp::HandleException(int) () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libcppyy_backend3_8.so.6.24
+#5  0x00007f7938b46881 in TUnixSystem::DispatchSignals(ESignals) () from /usr/local/miniconda3/envs/tau-ml/bin/../lib/libCore.so.6.24
+#6  <signal handler called>
+#7  0x00007f7935b43b84 in clang::CXXRecordDecl::getLambdaCallOperator() const () from /usr/local/miniconda3/envs/tau-ml/lib/libCling.so
+#8  0x0000000000000000 in ?? ()
+===========================================================
+
+
+The lines below might hint at the cause of the crash.
+You may get help by asking at the ROOT forum https://root.cern.ch/forum
+Only if you are really convinced it is a bug in ROOT then please submit a
+report at https://root.cern.ch/bugs Please post the ENTIRE stack trace
+from above as an attachment in addition to anything else
+that might help us fixing this issue.
+===========================================================
+#7  0x00007f7935b43b84 in clang::CXXRecordDecl::getLambdaCallOperator() const () from /usr/local/miniconda3/envs/tau-ml/lib/libCling.so
+#8  0x0000000000000000 in ?? ()
+===========================================================
+
+
+python: /home/conda/feedstock_root/build_artifacts/root_base_1618934102816/work/root-source/interpreter/cling/lib/Interpreter/IncrementalParser.cpp:403: cling::IncrementalParser::~IncrementalParser(): Assertion `(T->getState() == Transaction::kCommitted || T->getState() == Transaction::kRolledBackWithErrors || T->getState() == Transaction::kNumStates || T->getState() == Transaction::kRolledBack) && "Not committed?"' failed.
+zsh: abort (core dumped)  python DataLoader_test.py
+[1m[3m%[23m[1m[0m                                                                                                                                            ]2;x86_64-conda-linux-gnu:python[0m[23m[24m[J[9:59] [1mx86_64-conda-linux-gnu[0m:python% [Keexit
+
+Script done on Mon 06 Dec 2021 09:59:25 AM CET

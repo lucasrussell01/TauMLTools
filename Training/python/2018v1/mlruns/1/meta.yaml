@@ -1,0 +1,4 @@
+artifact_location: file:///home/russell/TauMLTools/Training/python/2018v1/mlruns/1
+experiment_id: '1'
+lifecycle_stage: active
+name: mytesting

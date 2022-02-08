@@ -1,0 +1,2 @@
+- experiment_name=mytest
+- gpu_cfg.gpu_index=1

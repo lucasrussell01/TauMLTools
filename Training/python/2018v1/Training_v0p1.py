@@ -9,6 +9,7 @@ import numpy as np
 from functools import partial
 from concurrent.futures import ThreadPoolExecutor
 
+import copy # LR: import copy for deepcopy
 import tensorflow as tf
 from tensorflow import keras
 import tensorflow.keras.backend as K
@@ -38,7 +39,7 @@ class NetSetup:
         self.reduction_rate = reduction_rate
         self.kernel_regularizer = kernel_regularizer
 
-        if self.activation == 'relu' or self.activation == 'PReLU' or self.activation == 'tanh':
+        if self.activation == 'relu' or self.activation == 'PReLU' or self.activation == 'tanh' or self.activation == "sigmoid" or self.activation == "softplus": # LR: Added more activation function options
             self.DropoutType = Dropout
             self.kernel_init = 'he_uniform'
             self.apply_batch_norm = True
@@ -110,11 +111,11 @@ def add_block_ending(net_setup, name_format, layer):
         return net_setup.DropoutType(net_setup.dropout_rate, name=name_format.format('dropout'))(activation_layer)
     return activation_layer
 
-def dense_block(prev_layer, kernel_size, net_setup, block_name, n):
+def dense_block(prev_layer, kernel_size, net_setup, block_name, n, use_bias = True): # LR: introduced option to tuirn off bias for dense block
     DenseType = MaskedDense if net_setup.time_distributed else Dense
     dense = DenseType(kernel_size, name="{}_dense_{}".format(block_name, n),
                       kernel_initializer=net_setup.kernel_init,
-                      kernel_regularizer=net_setup.kernel_regularizer)
+                      kernel_regularizer=net_setup.kernel_regularizer, use_bias = use_bias)
     if net_setup.time_distributed:
         dense = TimeDistributed(dense, name="{}_dense_{}".format(block_name, n))
     dense = dense(prev_layer)
@@ -137,11 +138,21 @@ def get_layer_size_sequence(net_setup):
             break
     return layer_sizes
 
-def reduce_n_features_1d(input_layer, net_setup, block_name):
+def reduce_n_features_1d(input_layer, net_setup, block_name, first_layer_reg = None): # LR: Introduced optional first layer regularisation
     prev_layer = input_layer
     layer_sizes = get_layer_size_sequence(net_setup)
     for n, layer_size in enumerate(layer_sizes):
-        prev_layer = dense_block(prev_layer, layer_size, net_setup, block_name, n+1)
+        if n == 0 and first_layer_reg is not None:  # LR: First layer regularisation
+            reg_name, reg_param = str(first_layer_reg).split(",")
+            reg_param = float(reg_param)
+            setup = copy.deepcopy(net_setup)
+            setup.kernel_regularizer = getattr(tf.keras.regularizers, reg_name)(reg_param)
+            print("Regularisation applied to ", "{}_dense_{}".format(block_name, n+1))
+            use_bias = False # LR: Turn off bias on first layer regularisation for tau dense layer
+        else:
+            use_bias = True 
+            setup = net_setup
+        prev_layer = dense_block(prev_layer, layer_size, setup, block_name, n+1, use_bias)
     return prev_layer
 
 def conv_block(prev_layer, filters, kernel_size, net_setup, block_name, n):
@@ -149,12 +160,20 @@ def conv_block(prev_layer, filters, kernel_size, net_setup, block_name, n):
                   kernel_initializer=net_setup.kernel_init)(prev_layer)
     return add_block_ending(net_setup, '{}_{{}}_{}'.format(block_name, n), conv)
 
-def reduce_n_features_2d(input_layer, net_setup, block_name):
+def reduce_n_features_2d(input_layer, net_setup, block_name, first_layer_reg = None):
     conv_kernel=(1, 1)
     prev_layer = input_layer
     layer_sizes = get_layer_size_sequence(net_setup)
     for n, layer_size in enumerate(layer_sizes):
-        prev_layer = conv_block(prev_layer, layer_size, conv_kernel, net_setup, block_name, n+1)
+        # if n == 0 and first_layer_reg is not None:  # LR: Introduced optional first layer regularisation
+        #     reg_name, reg_param = str(first_layer_reg).split(",")
+        #     reg_param = float(reg_param)
+        #     setup = copy.deepcopy(net_setup)
+        #     setup.kernel_regularizer = getattr(tf.keras.regularizers, reg_name)(reg_param)
+        #     print("Regularisation applied to", "{}_conv_{}".format(block_name, n+1))
+        # else: 
+        setup = net_setup
+        prev_layer = conv_block(prev_layer, layer_size, conv_kernel, setup, block_name, n+1)
     return prev_layer
 
 def get_n_filters_conv2d(n_input, current_size, window_size, reduction_rate):
@@ -179,7 +198,8 @@ def create_model(net_config, model_name):
         input_layer_tau = Input(name="input_tau", shape=(net_config.n_tau_branches,))
         input_layers.append(input_layer_tau)
         tau_net_setup.ComputeLayerSizes(net_config.n_tau_branches)
-        processed_tau = reduce_n_features_1d(input_layer_tau, tau_net_setup, 'tau')
+        # LR: Introduced option of regularisation for first dense layer
+        processed_tau = reduce_n_features_1d(input_layer_tau, tau_net_setup, 'tau', net_config.first_layer_reg)
         high_level_features.append(processed_tau)
 
     for loc in net_config.cell_locations:
@@ -191,7 +211,8 @@ def create_model(net_config, model_name):
                                      shape=(net_config.n_cells[loc], net_config.n_cells[loc], n_comp_features))
             input_layers.append(input_layer_comp)
             comp_net_setup.ComputeLayerSizes(n_comp_features)
-            reduced_comp = reduce_n_features_2d(input_layer_comp, comp_net_setup, "{}_{}".format(loc, comp_name))
+            # LR: Introduced option of regularisation for first convolutional layers
+            reduced_comp = reduce_n_features_2d(input_layer_comp, comp_net_setup, "{}_{}".format(loc, comp_name), net_config.first_layer_reg)
             reduced_inputs.append(reduced_comp)
 
         if len(net_config.comp_names) > 1:
@@ -318,7 +339,7 @@ def main(cfg: DictConfig) -> None:
         print("loss consts:",TauLosses.Le_sf, TauLosses.Lmu_sf, TauLosses.Ltau_sf, TauLosses.Ljet_sf)
 
         netConf_full = dataloader.get_net_config()
-        model = create_model(netConf_full, dataloader.model_name)
+        model = create_model(netConf_full, dataloader.model_name) # LR this is where model is created
         compile_model(model, setup["optimizer_name"], setup["learning_rate"])
         fit_hist = run_training(model, dataloader, False, cfg.log_suffix)
 

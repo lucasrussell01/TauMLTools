@@ -1,0 +1,24 @@
+Shuffle/weights
+
+CreateSpectralHists \
+   --outputfile embedded_spectrum_file.root \
+   --output_entries embedded_spectrum_entries.txt  \
+   --input-dir /eos/cms/store/group/phys_tau/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D \
+   --pt-hist "980, 20, 1000" \
+   --eta-hist "250, 0.0, 2.5" \
+   --file-name-pattern ".*eventTuple_.*\.root" \
+   --n-threads 1 
+
+CreateSpectralHists --outputfile embedded_spectrum_file.root --output_entries embedded_spectrum_entries.txt  --input-dir /eos/cms/store/group/phys_tau/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018* --pt-hist "980, 20, 1000" --eta-hist "250, 0.0, 2.5" --file-name-pattern "eventTuple_*.root" --n-threads 1 
+
+
+#Original:
+
+CreateSpectralHists \
+   --outputfile output_spectrum_file.root \
+   --output_entries entries_per_file.txt  \
+   --input-dir /path/to/shuffle/and/merge/files
+   --pt-hist "980, 20, 1000"
+   --eta-hist "250, 0.0, 2.5"
+   --file-name-pattern ".*2_rerun\/Shuffle.*.root"
+   --n-threads 1
