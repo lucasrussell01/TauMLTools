@@ -14,6 +14,13 @@ import time
 # class TerminateGenerator:
 #     pass
 
+# LR added ListToVector
+def ListToVector(l, elem_type):
+    vec = R.std.vector(elem_type)()
+    for elem in l:
+        vec.push_back(elem)
+    return vec
+
 def torch_to_tf(return_truth = True, return_weights = True):
 
     def with_both(X):
@@ -78,6 +85,10 @@ class QueueEx:
 class DataSource:
     def __init__(self, queue_files, emb_data_files):
         # LR: DataLoader intitiated with embedded data files
+        print("In DataLoader Base:", type(emb_data_files))
+        print(emb_data_files)
+        # emb_data_files = ListToVector(emb_data_files, "string")
+        # print("Attempted conversion:", type(emb_data_files))
         self.data_loader = R.DataLoader(emb_data_files)
         self.queue_files = queue_files
         self.require_file = True

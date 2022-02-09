@@ -102,16 +102,22 @@ class DataLoader (DataLoaderBase):
         print("Files for validation:", len(self.val_files))
 
         # LR: Embedded data imported and split here
-        emb_data_files = glob.glob(f'{self.config["Setup"]["emb_input_dir"]}/*.root') 
+        emb_data_files = glob.glob(f'{self.config["Setup"]["emb_input_dir"]}/*.root')
+    
+        #print(emb_data_files)
         emb_train_files, emb_val_files = \
              np.split(emb_data_files, [int(len(emb_data_files)*(1-self.validation_split))]) 
         self.emb_train_files = ListToVector(emb_train_files, "string")
         self.emb_val_files = ListToVector(emb_val_files, "string")
+        #emb_data_files = ListToVector(emb_data_files, "string")
+        print("In Dataloader: ", type(emb_data_files))
+        #print(emb_data_files)
 
     def get_generator(self, primary_set = True, return_truth = True, return_weights = True):
 
         _files = self.train_files if primary_set else self.val_files
         emb_data_files = self.emb_train_files if primary_set else self.emb_val_files # LR: choose embedded training or validation files
+        print("In get_generator: ", type(emb_data_files))
         if len(_files)==0:
             raise RuntimeError(("Taining" if primary_set else "Validation")+\
                                " file list is empty.")
@@ -131,10 +137,11 @@ class DataLoader (DataLoaderBase):
             terminators = [ mp.Event() for _ in range(self.n_load_workers) ]
 
             processes = []
+            print("In DataLoader generator:", type(emb_data_files))
             for i in range(self.n_load_workers):
                 processes.append(
                 mp.Process(target = LoaderThread,
-                        args = (queue_out, queue_files, terminators, emb_data_files, i,
+                        args = (queue_out, queue_files, emb_data_files, terminators,  i,
                                 self.input_grids, self.batch_size, self.n_inner_cells,
                                 self.n_outer_cells, self.n_flat_features, self.n_grid_features,
                                 self.tau_types, return_truth, return_weights,))) # LR added emb_data_files

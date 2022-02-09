@@ -1,12 +1,13 @@
 Setup:
     n_tau                :  250 # LR: total number of tau candidates in one batch
-    n_embtau             :  125 # LR: number of embedded taus per batch
+    n_embtau             :  30 # LR: number of embedded taus per batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
     n_outer_cells        :  21
     outer_cell_size      :  0.05
     n_threads            :  1
+    debug : False
 
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
