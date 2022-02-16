@@ -1,25 +1,26 @@
 Setup:
     n_tau                :  250 # LR: total number of tau candidates in one batch
-    n_embtau             :  30 # LR: number of embedded taus per batch
+    n_embtau             :  125 # LR: number of embedded taus per batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
     n_outer_cells        :  21
     outer_cell_size      :  0.05
     n_threads            :  1
-    debug : False
-
+    debug : False # LR: added def of debug
+    use_weights : True # LR: Added Toggle weight config
+    tau_cut : 0 #LR: Added depptau score cutoff
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
     tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet"} 
     emb_tau_types_names  : {"6":"emb_tau" } # LR: Introduced embedded tau data type
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
-    input_dir            : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
-    input_spectrum       : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
-    target_spectrum      : "/data/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_spectrum.root"
-    emb_input_dir        : "/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D" # LR: Location of embedded tau files
-    emb_input_spectrum   : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_file.root" # LR: Location of embedded Tau Spectrum
+    input_dir            : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
+    input_spectrum       : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    target_spectrum      : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    emb_input_dir        : "/home/russell/TauMLTools/temp_tuples/Embedded_Training" #"/data/TauML/prod_2018_v2/full_tuples/Embedded_MuTau_Run2018D" # LR: Location of embedded tau files
+    emb_input_spectrum   : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_comb.root" # LR: Location of embedded Tau Spectrum
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
 
@@ -64,12 +65,12 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 1000
-    n_batches_val        : 100
-    n_batches_log        : 10 # monitor every n batches in tensorboard
+    n_batches            : 50000
+    n_batches_val        : 15000
+    n_batches_log        : 100 # monitor every n batches in tensorboard
     epoch                : 0
     n_epochs             : 1
-    validation_split     : 0.3
+    validation_split     : 0.3 #set to zero for data gen
     max_queue_size       : 10
     n_load_workers       : 1
     input_grids          : [
@@ -85,7 +86,7 @@ SetupNN:
     comp_merge_net       : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1.6, "first_layer_width": "n", "last_layer_width": 64 }
     conv_2d_net          : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": null, "window_size": 3 }
     dense_net            : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1, "first_layer_width": 200, "last_layer_width": 200, "min_n_layers": 4 }
-    first_layer_reg      :  null  # LR: Introduced optional first layer regularisation
+    first_layer_reg      : "L1, 1"  # LR: Introduced optional first layer regularisation
 
 CellObjectType : [
                  GridGlobal,
@@ -218,7 +219,7 @@ Scaling_setup:
 ##     - scaling_type: string, one of ["no scaling", "categorical", "linear", "normal"]
 ##     - lim_params: if passed, should be either a list of two numbers or a dictionary. See README for more details.
 Features_all :
-    TauFlat :
+    TauFlat :    #LR: comment all feats
                 - rho: [null, null, "linear", 0, 50]
                 - tau_pt: [null, null, "linear", 20, 1000]
                 - tau_eta: [null, null, "linear", -2.3, 2.3]
@@ -263,7 +264,7 @@ Features_all :
                 - tau_emFraction: [null, null, "linear", -1., 1.]
                 - tau_inside_ecal_crack: [null, null, "no_scaling"]
                 - tau_leadChargedCand_etaAtEcalEntrance_minus_tau_eta: [null, {"tau_leadChargedCand_etaAtEcalEntrance_minus_tau_eta": "tau_leadChargedCand_etaAtEcalEntrance - tau_eta"}, "normal", -5, 5]
-
+                # LR: comment out features
     GridGlobal:
                 - rho: [null, null, "linear", 0, 50]
                 - tau_pt: [null, null, "linear", 20, 1000]

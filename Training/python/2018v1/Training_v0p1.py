@@ -165,14 +165,14 @@ def reduce_n_features_2d(input_layer, net_setup, block_name, first_layer_reg = N
     prev_layer = input_layer
     layer_sizes = get_layer_size_sequence(net_setup)
     for n, layer_size in enumerate(layer_sizes):
-        # if n == 0 and first_layer_reg is not None:  # LR: Introduced optional first layer regularisation
-        #     reg_name, reg_param = str(first_layer_reg).split(",")
-        #     reg_param = float(reg_param)
-        #     setup = copy.deepcopy(net_setup)
-        #     setup.kernel_regularizer = getattr(tf.keras.regularizers, reg_name)(reg_param)
-        #     print("Regularisation applied to", "{}_conv_{}".format(block_name, n+1))
-        # else: 
-        setup = net_setup
+        if n == 0 and first_layer_reg is not None:  # LR: Introduced optional first layer regularisation
+            reg_name, reg_param = str(first_layer_reg).split(",")
+            reg_param = float(reg_param)
+            setup = copy.deepcopy(net_setup)
+            setup.kernel_regularizer = getattr(tf.keras.regularizers, reg_name)(reg_param)
+            print("Regularisation applied to", "{}_conv_{}".format(block_name, n+1))
+        else: 
+            setup = net_setup
         prev_layer = conv_block(prev_layer, layer_size, conv_kernel, setup, block_name, n+1)
     return prev_layer
 
@@ -272,8 +272,8 @@ def compile_model(model, opt_name, learning_rate):
 
 def run_training(model, data_loader, to_profile, log_suffix):
 
-    gen_train = data_loader.get_generator(primary_set = True)
-    gen_val = data_loader.get_generator(primary_set = False)
+    gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)  # LR: Added Toggle weight config
+    gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)  # LR: Added Toggle weight config
     input_shape, input_types = data_loader.get_input_config()
 
     data_train = tf.data.Dataset.from_generator(

@@ -233,8 +233,8 @@ class TauLosses:
     def tau_crossentropy_v2(target, output):
 
         # LR: Replaced with Binary cross entropy loss
-        tau_target = target[:, 2] # LR: emb_tau->0, tau->1, this is done by setting y_onehot in main DataLoader 
-        tau_output = output[:, 2] # LR: only look at tau output (index 2)
+        tau_target = target[:, 2:3] # LR: emb_tau->0, tau->1, this is done by setting y_onehot in main DataLoader 
+        tau_output = output[:, 2:3] # LR: only look at tau output (index 2)
         loss = tf.keras.losses.binary_crossentropy(tau_target, tau_output) # LR: Standard cross entropy loss function
         return loss
 

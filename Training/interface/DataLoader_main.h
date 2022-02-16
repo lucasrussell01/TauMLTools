@@ -149,7 +149,7 @@ public:
 
     DataLoader(const std::vector<std::string> & emb_data) :  // LR: introduced embedded data as variable
         // current_entry(start_dataset),
-        innerCellGridRef(n_inner_cells, n_inner_cells, inner_cell_size, inner_cell_size),
+        innerCellGridRef(n_inner_cells, n_inner_cells, inner_cell_size, inner_cell_size), 
         outerCellGridRef(n_outer_cells, n_outer_cells, outer_cell_size, outer_cell_size),
         hasData(false), fullData(false), hasFile(false)
     {
@@ -205,6 +205,7 @@ public:
         std::shared_ptr<TH2D> emb_input_th2d  = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_input ->Get(("eta_pt_hist_"+emb_tau_name).c_str())));
         if (!emb_input_th2d) throw std::runtime_error("Embedded Data Input histogram could not be loaded for tau type "+emb_tau_name);
         Double_t factor = target_th2d->Integral();
+        factor = factor*n_embtau/double(n_tau-n_embtau); //LR : proportion of taus to emb
         emb_input_th2d->Scale(factor/emb_input_th2d->Integral()); // LR: Scale embedded histogram
         std::cout << "Embedded Histogram Scaled\n";  
         target_histogram.th2d_add(*(target_th2d.get()));
@@ -263,7 +264,7 @@ public:
             const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
             bool tau_is_set = false;
 
-            if (gen_match && tau.tau_pt <500){
+            if (gen_match && tau.tau_pt <500 &&tau.tau_byDeepTau2017v2p1VSjetraw >tau_cut){
               if (recompute_tautype){
                 tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
               }
@@ -271,7 +272,7 @@ public:
               if ( emb_tau_types_names.find(tau.tauType) != emb_tau_types_names.end() ) {
                 data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // LR: filling embedded tau weights
                 FillTauBranches(tau, tau_i);
-                FillCellGrid(tau, tau_i, innerCellGridRef, true);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true); 
                 FillCellGrid(tau, tau_i, outerCellGridRef, false);
                 ++tau_i; // LR: increment tau index
                 tau_is_set = true;
@@ -292,7 +293,7 @@ public:
             const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
             bool tau_is_set = false;
 
-            if (gen_match && tau.tau_pt <500){
+            if (gen_match && tau.tau_pt <500 &&tau.tau_byDeepTau2017v2p1VSjetraw >tau_cut){
               if (recompute_tautype){
                 tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
               }
@@ -302,7 +303,7 @@ public:
                 data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
                 data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // filling weights
                 FillTauBranches(tau, tau_i);
-                FillCellGrid(tau, tau_i, innerCellGridRef, true);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true);  
                 FillCellGrid(tau, tau_i, outerCellGridRef, false);
                 ++tau_i;
                 tau_is_set = true;
@@ -911,7 +912,7 @@ public:
                                     const std::vector<float>& phi_vec, const std::vector<int>& particleType = {}) {
               if(eta_vec.size() != phi_vec.size())
                   throw std::runtime_error("Inconsistent cell inputs.");
-              for(size_t n = 0; n < eta_vec.size(); ++n) {
+              for(size_t n = 0; n < eta_vec.size(); ++n) { 
                   if(particleType.size() && !isSameCellObjectType(particleType.at(n),type)) continue;
                   const double eta = eta_vec.at(n), phi = phi_vec.at(n);
                   const double deta = eta - tau_eta, dphi = DeltaPhi(phi, tau_phi);
@@ -920,7 +921,7 @@ public:
                   const bool inside_iso_cone = dR < iso_cone;
                   if(inner && !inside_signal_cone) continue;
                   // if(!inner && (inside_signal_cone || !inside_iso_cone)) continue;
-                  if(!inner && !inside_iso_cone) continue;
+                  if(!inner && (!inside_iso_cone || inside_signal_cone)) continue; // LR: exclude inner from outer cone orig: if(!inner && !inside_iso_cone) continue;
                   CellIndex cellIndex;
                   if(grid.TryGetCellIndex(deta, dphi, cellIndex))
                       grid.at(cellIndex)[type].insert(n);
@@ -945,7 +946,7 @@ private:
   Long64_t emb_current_entry; // LR: Declare current embedded tau entry
   Long64_t current_tau; // number of the current tau candidate
   Long64_t tau_i;
-  const CellGrid innerCellGridRef, outerCellGridRef;
+  const CellGrid innerCellGridRef, outerCellGridRef; 
 
   bool hasData;
   bool fullData;

@@ -1,5 +1,6 @@
 import gc
 import glob
+import numpy as np
 
 from DataLoaderBase import *
 
@@ -74,6 +75,8 @@ class DataLoader (DataLoaderBase):
                 self.n_grid_features[str(celltype)] = len(self.config["Features_all"][celltype]) - \
                                                       len(self.config["Features_disable"][celltype])
 
+        self.config["Features_disable"]["TauFlat"] = [list((self.config["Features_all"]["TauFlat"])[i].keys())[0] for i in range(len(self.config["Features_all"]["TauFlat"]))] #LR: disable all features list(tau_weights_cfg[i].keys())[0]
+        
         self.n_flat_features = len(self.config["Features_all"]["TauFlat"]) - \
                                len(self.config["Features_disable"]["TauFlat"])
 
@@ -93,7 +96,9 @@ class DataLoader (DataLoaderBase):
         self.input_grids        = self.config["SetupNN"]["input_grids"]
         self.n_cells = { 'inner': self.n_inner_cells, 'outer': self.n_outer_cells }
         self.model_name       = self.config["SetupNN"]["model_name"]
-        
+        self.use_weights = self.config["Setup"]["use_weights"]  # LR: Added Toggle weight config
+        self.tau_cut = self.config["Setup"]["tau_cut"] #LR: Added Tau cutoff
+        #print("Tau Score Cut:", self.tau)
         data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') 
         self.train_files, self.val_files = \
              np.split(data_files, [int(len(data_files)*(1-self.validation_split))])
@@ -104,20 +109,16 @@ class DataLoader (DataLoaderBase):
         # LR: Embedded data imported and split here
         emb_data_files = glob.glob(f'{self.config["Setup"]["emb_input_dir"]}/*.root')
     
-        #print(emb_data_files)
+    
         emb_train_files, emb_val_files = \
              np.split(emb_data_files, [int(len(emb_data_files)*(1-self.validation_split))]) 
         self.emb_train_files = ListToVector(emb_train_files, "string")
         self.emb_val_files = ListToVector(emb_val_files, "string")
-        #emb_data_files = ListToVector(emb_data_files, "string")
-        print("In Dataloader: ", type(emb_data_files))
-        #print(emb_data_files)
-
+       
     def get_generator(self, primary_set = True, return_truth = True, return_weights = True):
 
         _files = self.train_files if primary_set else self.val_files
         emb_data_files = self.emb_train_files if primary_set else self.emb_val_files # LR: choose embedded training or validation files
-        print("In get_generator: ", type(emb_data_files))
         if len(_files)==0:
             raise RuntimeError(("Taining" if primary_set else "Validation")+\
                                " file list is empty.")
@@ -153,6 +154,12 @@ class DataLoader (DataLoaderBase):
                     finish_counter+=1
                     terminators[item].set()
                 else:
+                    converted = converter(item)
+                    # print("Size of converted: ", len(converted))
+                    # print(converted[-1])
+                    # sum_emb = np.sum(converted[-1][0:30])
+                    # print("Sum embedded: ", sum_emb)
+                    # print("Sum tau: 220 \n \n \n \n")
                     yield converter(item)
 
             queue_out.clear()
@@ -217,7 +224,7 @@ class DataLoader (DataLoaderBase):
         netConf.conv_2d_net = self.config["SetupNN"]["conv_2d_net"]
         netConf.dense_net = self.config["SetupNN"]["dense_net"]
         netConf.n_tau_branches = len(input_tau_branches)
-        netConf.cell_locations = ['inner', 'outer']
+        netConf.cell_locations = ["outer"] # LR: MOD disable inner cone ['inner', 'outer']
         netConf.comp_names = ['egamma', 'muon', 'hadrons']
         netConf.n_comp_branches = [
             len(input_cell_external_branches + input_cell_pfCand_ele_branches + input_cell_ele_branches + input_cell_pfCand_gamma_branches),
@@ -227,15 +234,14 @@ class DataLoader (DataLoaderBase):
         netConf.n_cells = self.n_cells
         netConf.n_outputs = self.tau_types
         netConf.first_layer_reg = self.config["SetupNN"]["first_layer_reg"] # LR: Introduced optional first layer regularisation
-
         return netConf
 
     def get_input_config(self, return_truth = True, return_weights = True):
         # Input tensor shape and type
         input_shape, input_types = [], []
-        input_shape.append(tuple([None, len(self.get_branches(self.config,"TauFlat"))]))
-        input_types.append(tf.float32)
-        for grid in ["inner","outer"]:
+        # input_shape.append(tuple([None, len(self.get_branches(self.config,"TauFlat"))]))#LR: disabing tauflat
+        # input_types.append(tf.float32) #LR: disbling tauflat
+        for grid in ["outer"]: #LR: disabling inner ["inner","outer"]:
             for f_group in self.input_grids:
                 n_f = sum([len(self.get_branches(self.config,cell_type)) for cell_type in f_group])
                 input_shape.append(tuple([None, self.n_cells[grid], self.n_cells[grid], n_f]))

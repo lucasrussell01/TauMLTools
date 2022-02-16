@@ -1,19 +1,17 @@
-import tensorflow as tf
-import numpy as np
+total = 250*n_batches
 
-target_tau = np.full(220, 1)
-target_emb = np.zeros(30)
-np.concatenate((target_emb, target_tau))
-target_arr = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
- 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
- 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,]
-target = tf.constant(target_arr)
-print(target)
+average_outer_hadron = outer_hadron_sum/total
+average2_outer_hadron = outer_hadron_sum2/total
+std_outer_hadron = np.sqrt(average2_outer_hadron - average_outer_hadron**2)
+
+
+outer_hadron_stats = pd.DataFrame(hadron_feats, columns = ["outer hadron Feature"])
+outer_hadron_stats["Avg"] = average_outer_hadron
+outer_hadron_stats["Avg of ^2"]= average2_outer_hadron
+outer_hadron_stats["Stand. Dev."] = std_outer_hadron
+outer_hadron_stats["Max"] = outer_hadron_max
+outer_hadron_stats["Min"] = outer_hadron_min
+
+print(outer_hadron_stats)
+
+outer_hadron_stats.to_csv('./outer_hadron_stats.csv', index=True)

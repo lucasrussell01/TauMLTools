@@ -1,3 +1,0 @@
-- experiment_name=mytest
-- gpu_cfg.gpu_index=1
-- training_cfg.SetupNN.model_name=binary_l1_1

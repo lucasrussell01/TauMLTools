@@ -85,10 +85,6 @@ class QueueEx:
 class DataSource:
     def __init__(self, queue_files, emb_data_files):
         # LR: DataLoader intitiated with embedded data files
-        print("In DataLoader Base:", type(emb_data_files))
-        print(emb_data_files)
-        # emb_data_files = ListToVector(emb_data_files, "string")
-        # print("Attempted conversion:", type(emb_data_files))
         self.data_loader = R.DataLoader(emb_data_files)
         self.queue_files = queue_files
         self.require_file = True
@@ -176,14 +172,14 @@ class GetData():
             n_grid_features,
             n_flat_features,
             input_grids,
-            n_inner_cells,
+            n_inner_cells,  
             n_outer_cells):        
         # Flat Tau features
-        X_all = [ __class__.getdata(data.x_tau, (batch_size, n_flat_features)) ]
+        # X_all = [ __class__.getdata(data.x_tau, (batch_size, n_flat_features)) ] #LR disable flats
         # Inner grid
-        X_all += __class__.getgrid(data.x_grid, batch_size, n_grid_features,
-                                   input_grids, n_inner_cells, True) # 500 11 11 176
+        # X_all += __class__.getgrid(data.x_grid, batch_size, n_grid_features,
+        #                            input_grids, n_inner_cells, True) # 500 11 11 176 #LR disable inner
         # Outer grid
-        X_all += __class__.getgrid(data.x_grid, batch_size, n_grid_features,
-                                   input_grids, n_outer_cells, False) # 500 11 11 176
+        X_all = __class__.getgrid(data.x_grid, batch_size, n_grid_features,
+                                   input_grids, n_outer_cells, False) # 500 11 11 176 #LR: changes += to +
         return X_all
