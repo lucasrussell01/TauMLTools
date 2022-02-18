@@ -168,7 +168,7 @@ class GetData():
             n_outer_cells,
             active_features,
             cell_locations):  
-        X_all = []      
+        X_all = []   
         # Flat Tau features
         if 'TauFlat' in active_features:
             X_all += [ __class__.getdata(data.x_tau, (batch_size, n_flat_features)) ]

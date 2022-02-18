@@ -31,6 +31,21 @@ sys.path.insert(0, "..")
 from common import *
 import DataLoader
 
+def reshape_tensor(x, y, weights): #input x[0][n]
+    x_out = []
+    print(len(x))
+    for elem in x:
+        s = tf.shape(elem)
+        new_s = [ s[0] * s[1] ]
+        for n in range(2, len(s)):
+            new_s.append(s[n])
+        elem_out = tf.reshape(elem, new_s)
+        x_out.append(elem_out)
+    print("Here")
+    return tuple(x_out), y, weights
+
+save_path =  "/home/russell/tfdata/100batches_nocut"
+
 class NetSetup:
     def __init__(self, activation, dropout_rate=0, reduction_rate=1, kernel_regularizer=None):
         self.activation = activation
@@ -267,16 +282,23 @@ def compile_model(model, opt_name, learning_rate):
 
 def run_training(model, data_loader, to_profile, log_suffix):
 
-    gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
-    gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
-    input_shape, input_types = data_loader.get_input_config()
+    if data_loader.ROOT_to_tf:
+        data_train = tf.data.experimental.load(save_path, compression="GZIP")
+        print("Dataset Loaded")
+        b=1
+        data_train = data_train.map(reshape_tensor)
+    else:
+        gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
+        gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
+        input_shape, input_types = data_loader.get_input_config()
 
-    data_train = tf.data.Dataset.from_generator(
-        gen_train, output_types = input_types, output_shapes = input_shape
-        ).prefetch(tf.data.AUTOTUNE)
-    data_val = tf.data.Dataset.from_generator(
-        gen_val, output_types = input_types, output_shapes = input_shape
-        ).prefetch(tf.data.AUTOTUNE)
+        data_train = tf.data.Dataset.from_generator(
+            gen_train, output_types = input_types, output_shapes = input_shape
+            ).prefetch(tf.data.AUTOTUNE)
+        data_val = tf.data.Dataset.from_generator(
+            gen_val, output_types = input_types, output_shapes = input_shape
+            ).prefetch(tf.data.AUTOTUNE)
+    
 
     model_name = data_loader.model_name
     log_name = '%s_%s' % (model_name, log_suffix)
@@ -294,9 +316,15 @@ def run_training(model, data_loader, to_profile, log_suffix):
                                                      update_freq = ( 0 if data_loader.n_batches_log<=0 else data_loader.n_batches_log ))
     callbacks.append(tboard_callback)
 
-    fit_hist = model.fit(data_train, validation_data = data_val,
+    if data_loader.ROOT_to_tf:
+        fit_hist = model.fit(data_train, validation_split = 0,
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
                          callbacks = callbacks)
+    else:
+        fit_hist = model.fit(data_train, data_val,
+                         epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
+                         callbacks = callbacks)
+    
 
     model_path = f"{log_name}_final.tf"
     model.save(model_path, save_format="tf")
