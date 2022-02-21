@@ -321,7 +321,7 @@ def run_training(model, data_loader, to_profile, log_suffix):
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
                          callbacks = callbacks)
     else:
-        fit_hist = model.fit(data_train, data_val,
+        fit_hist = model.fit(data_train, validation_data = data_val,
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
                          callbacks = callbacks)
     

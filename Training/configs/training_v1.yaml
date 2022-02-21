@@ -20,7 +20,7 @@ Setup:
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
     rm_inner_from_outer  : False
-    ROOT_to_tf           : True
+    ROOT_to_tf           : False
     
     # here define variables for the Histogram_2D class
     yaxis                : [
@@ -67,7 +67,7 @@ SetupNN:
     n_batches_log        : 10 #1000 # monitor every n batches in tensorboard
     epoch                : 0
     n_epochs             : 1
-    validation_split     : 0
+    validation_split     : 0.3
     max_queue_size       : 10
     n_load_workers       : 1
 
