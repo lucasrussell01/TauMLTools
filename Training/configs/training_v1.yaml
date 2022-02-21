@@ -62,7 +62,7 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 10 #80000
+    n_batches            : 1000 #80000
     n_batches_val        : 0 #80000
     n_batches_log        : 10 #1000 # monitor every n batches in tensorboard
     epoch                : 0

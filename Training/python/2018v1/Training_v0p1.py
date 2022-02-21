@@ -44,7 +44,7 @@ def reshape_tensor(x, y, weights): #input x[0][n]
     print("Here")
     return tuple(x_out), y, weights
 
-save_path =  "/home/russell/tfdata/100batches_nocut"
+save_path =  "/home/russell/tfdata/1k_batches_default"
 
 class NetSetup:
     def __init__(self, activation, dropout_rate=0, reduction_rate=1, kernel_regularizer=None):
@@ -285,8 +285,8 @@ def run_training(model, data_loader, to_profile, log_suffix):
     if data_loader.ROOT_to_tf:
         data_train = tf.data.experimental.load(save_path, compression="GZIP")
         print("Dataset Loaded")
-        b=1
-        data_train = data_train.map(reshape_tensor)
+        # b=1
+        # data_train = data_train.map(reshape_tensor)
     else:
         gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
         gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
