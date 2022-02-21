@@ -283,7 +283,9 @@ def compile_model(model, opt_name, learning_rate):
 def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.ROOT_to_tf:
-        data_train = tf.data.experimental.load(save_path, compression="GZIP")
+        ds = tf.data.experimental.load(save_path, compression="GZIP")
+        data_train = ds.take(700)
+        data_val = ds.skip(700)
         print("Dataset Loaded")
         # b=1
         # data_train = data_train.map(reshape_tensor)
@@ -317,7 +319,7 @@ def run_training(model, data_loader, to_profile, log_suffix):
     callbacks.append(tboard_callback)
 
     if data_loader.ROOT_to_tf:
-        fit_hist = model.fit(data_train, validation_split = 0,
+        fit_hist = model.fit(data_train, validation_data = data_val,
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
                          callbacks = callbacks)
     else:
