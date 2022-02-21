@@ -3,7 +3,7 @@
 if [ $# -ne 1 ] ; then
     echo "Setup environment for TauMLTools"
     echo "Usage: source setup.sh mode"
-    echo "Supported modes: prod2018 prod2018UL phase2 lcg conda "
+    echo "Supported modes: prod2018 phase2 lcg conda"
     return 1
 fi
 
@@ -19,19 +19,15 @@ function run_cmd {
     fi
 }
 
-if [ $MODE = "prod2018" -o $MODE = "phase2" -o $MODE = "prod2018UL" ] ; then
+if [ $MODE = "prod2018" -o $MODE = "phase2" ] ; then
     if [ $MODE = "prod2018" ] ; then
-        CMSSW_VER=CMSSW_10_6_20
+        CMSSW_VER=CMSSW_10_6_29
         APPLY_BOOSTED_FIX=1
         export SCRAM_ARCH=slc7_amd64_gcc700
     elif [ $MODE = "phase2" ] ; then
         CMSSW_VER=CMSSW_11_2_5
         APPLY_BOOSTED_FIX=0
         export SCRAM_ARCH=slc7_amd64_gcc900
-    elif [ $MODE = "prod2018UL" ] ; then
-        CMSSW_VER=CMSSW_10_6_27
-        APPLY_BOOSTED_FIX=0
-        export SCRAM_ARCH=slc7_amd64_gcc700
     fi
 
     if ! [ -f soft/$CMSSW_VER/.installed ] ; then
@@ -64,18 +60,46 @@ if [ $MODE = "prod2018" -o $MODE = "phase2" -o $MODE = "prod2018UL" ] ; then
 elif [ $MODE = "conda" ] ; then
     CONDA=$(which conda 2>/dev/null)
     if [ x$CONDA = "x" -o x$CONDA = "x/usr/bin/conda" ] ; then
-        PRIVATE_CONDA_INSTALL=$BASE_PATH/soft/conda
+        PRIVATE_CONDA_INSTALL_DEFAULT="$BASE_PATH/soft/conda"
+        PRIVATE_CONDA_INSTALL="$PRIVATE_CONDA_INSTALL_DEFAULT"
+        if [ -f "$PRIVATE_CONDA_INSTALL_DEFAULT.ref" ] ; then
+            PRIVATE_CONDA_INSTALL=$(cat "$PRIVATE_CONDA_INSTALL.ref")
+        fi
         if ! [ -f "$PRIVATE_CONDA_INSTALL/.installed" ] ; then
-            if [ -d $PRIVATE_CONDA_INSTALL ] ; then
-                echo "Removing incomplete private conda installation..."
-                run_cmd rm -rf $PRIVATE_CONDA_INSTALL
+            echo "Please select path where conda environment and packages will be installed."
+            if [[ $HOST = lxplus* ]] ; then
+                echo "On lxplus it is recommended to use /afs/cern.ch/work/${USER:0:1}/$USER/conda or /eos/home-${USER:0:1}/$USER/conda."
             fi
-            echo "Installing conda..."
-            run_cmd mkdir -p soft
-            run_cmd cd soft
-            run_cmd curl https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -o Miniconda2-latest-Linux-x86_64.sh
-            run_cmd bash Miniconda2-latest-Linux-x86_64.sh -b -p $PRIVATE_CONDA_INSTALL
-            run_cmd touch "$PRIVATE_CONDA_INSTALL/.installed"
+            printf "new or existing conda installation path (default $PRIVATE_CONDA_INSTALL_DEFAULT): "
+            read PRIVATE_CONDA_INSTALL
+            if [ "x$PRIVATE_CONDA_INSTALL" = "x" ] ; then
+                PRIVATE_CONDA_INSTALL="$PRIVATE_CONDA_INSTALL_DEFAULT"
+            fi
+            if ! [ "x$PRIVATE_CONDA_INSTALL" = "x$PRIVATE_CONDA_INSTALL_DEFAULT" ] ; then
+                echo $PRIVATE_CONDA_INSTALL > "$PRIVATE_CONDA_INSTALL_DEFAULT.ref"
+            else
+                rm -f "$PRIVATE_CONDA_INSTALL_DEFAULT.ref"
+            fi
+            if ! [ -f "$PRIVATE_CONDA_INSTALL/.installed" ] ; then
+                if [ -d $PRIVATE_CONDA_INSTALL ] ; then
+                    printf "Incomplete private conda installation in $PRIVATE_CONDA_INSTALL. Proceed? [Y/n] "
+                    read X
+                    if [ "x$X" = "x" -o "x$X" = "xy" -o "x$X" = "xY" -o "x$X" = "xyes" ] ; then
+                        run_cmd rm -rf $PRIVATE_CONDA_INSTALL
+                    else
+                        echo "Aborting..."
+                        kill -INT $$
+                    fi
+                fi
+                echo "Installing conda..."
+                run_cmd mkdir -p soft
+                run_cmd cd soft
+                run_cmd curl https://repo.anaconda.com/miniconda/Miniconda2-latest-Linux-x86_64.sh -o Miniconda2-latest-Linux-x86_64.sh
+                run_cmd bash Miniconda2-latest-Linux-x86_64.sh -b -p "$PRIVATE_CONDA_INSTALL"
+                run_cmd touch "$PRIVATE_CONDA_INSTALL/.installed"
+                run_cmd rm Miniconda2-latest-Linux-x86_64.sh
+                run_cmd cd ..
+            fi
         fi
         __conda_setup="$($PRIVATE_CONDA_INSTALL/bin/conda shell.${SHELL##*/} hook)"
         if [ $? -eq 0 ]; then
@@ -102,3 +126,4 @@ else
 fi
 
 echo "$MODE environment is successfully loaded."
+
