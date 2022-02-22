@@ -96,6 +96,7 @@ class DataLoader (DataLoaderBase):
         self.rm_inner_from_outer = self.config["Setup"]["rm_inner_from_outer"]
         self.active_features = self.config["SetupNN"]["active_features"]
         self.ROOT_to_tf = self.config["Setup"]["ROOT_to_tf"]
+        self.tf_input_dir = self.config["Setup"]["tf_input_dir"]
 
         if self.ROOT_to_tf == False:
             data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') # kill this if tf format

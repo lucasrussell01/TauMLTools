@@ -44,7 +44,6 @@ def reshape_tensor(x, y, weights): #input x[0][n]
     print("Here")
     return tuple(x_out), y, weights
 
-save_path =  "/home/russell/tfdata/1k_batches_default"
 
 class NetSetup:
     def __init__(self, activation, dropout_rate=0, reduction_rate=1, kernel_regularizer=None):
@@ -283,12 +282,13 @@ def compile_model(model, opt_name, learning_rate):
 def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.ROOT_to_tf:
-        ds = tf.data.experimental.load(save_path, compression="GZIP")
-        data_train = ds.take(700)
-        data_val = ds.skip(700)
-        print("Dataset Loaded")
-        # b=1
-        # data_train = data_train.map(reshape_tensor)
+        ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") #opening dataframe with all data
+        total_batches = data_loader.n_batches + data_loader.n_batches_val
+        print(total_batches)
+        dataset = ds.take(total_batches) # have correct number of batches in dataset
+        data_train = dataset.take(data_loader.n_batches) #take first x values for training
+        data_val = dataset.skip(data_loader.n_batches) # take rest of values for validation
+        print("Dataset Loaded with TensorFlow")
     else:
         gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
         gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
@@ -318,14 +318,10 @@ def run_training(model, data_loader, to_profile, log_suffix):
                                                      update_freq = ( 0 if data_loader.n_batches_log<=0 else data_loader.n_batches_log ))
     callbacks.append(tboard_callback)
 
-    if data_loader.ROOT_to_tf:
-        fit_hist = model.fit(data_train, validation_data = data_val,
-                         epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
-                         callbacks = callbacks)
-    else:
-        fit_hist = model.fit(data_train, validation_data = data_val,
-                         epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
-                         callbacks = callbacks)
+    
+    fit_hist = model.fit(data_train, validation_data = data_val,
+                        epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
+                        callbacks = callbacks)
     
 
     model_path = f"{log_name}_final.tf"
