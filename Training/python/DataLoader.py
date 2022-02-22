@@ -1,5 +1,6 @@
 import gc
 import glob
+from tqdm import tqdm
 
 from DataLoaderBase import *
 
@@ -95,10 +96,10 @@ class DataLoader (DataLoaderBase):
         self.cell_locations = self.config["SetupNN"]["cell_locations"]
         self.rm_inner_from_outer = self.config["Setup"]["rm_inner_from_outer"]
         self.active_features = self.config["SetupNN"]["active_features"]
-        self.ROOT_to_tf = self.config["Setup"]["ROOT_to_tf"]
+        self.input_type = self.config["Setup"]["input_type"]
         self.tf_input_dir = self.config["Setup"]["tf_input_dir"]
 
-        if self.ROOT_to_tf == False:
+        if self.input_type == "ROOT":
             data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') # kill this if tf format
             self.train_files, self.val_files = \
                 np.split(data_files, [int(len(data_files)*(1-self.validation_split))])
@@ -106,7 +107,7 @@ class DataLoader (DataLoaderBase):
             print("Files for validation:", len(self.val_files))
 
 
-    def get_generator(self, primary_set = True, return_truth = True, return_weights = True):
+    def get_generator(self, primary_set = True, return_truth = True, return_weights = True, show_progress = False):
 
         _files = self.train_files if primary_set else self.val_files
         if len(_files)==0:
@@ -120,6 +121,8 @@ class DataLoader (DataLoaderBase):
         def _generator():
 
             finish_counter = 0
+            if show_progress:
+                pbar = tqdm(total = n_batches)
 
             queue_files = mp.Queue()
             [ queue_files.put(file) for file in _files ]
@@ -143,6 +146,8 @@ class DataLoader (DataLoaderBase):
                     finish_counter+=1
                     terminators[item].set()
                 else:
+                    if show_progress:
+                        pbar.update(1)
                     yield converter(item)
 
             queue_out.clear()

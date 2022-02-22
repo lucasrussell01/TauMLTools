@@ -281,15 +281,15 @@ def compile_model(model, opt_name, learning_rate):
 
 def run_training(model, data_loader, to_profile, log_suffix):
 
-    if data_loader.ROOT_to_tf:
-        ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") #opening dataframe with all data
+    if data_loader.input_type == "tf":
+        #ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") #opening dataframe with all data
         total_batches = data_loader.n_batches + data_loader.n_batches_val
         print(total_batches)
-        dataset = ds.take(total_batches) # have correct number of batches in dataset
+        dataset = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") #ds.take(total_batches) # have correct number of batches in dataset
         data_train = dataset.take(data_loader.n_batches) #take first x values for training
-        data_val = dataset.skip(data_loader.n_batches) # take rest of values for validation
+        data_val = dataset.skip(data_loader.n_batches).take(data_loader.n_batches_val) # take rest of values for validation
         print("Dataset Loaded with TensorFlow")
-    else:
+    elif data_loader.input_type == "ROOT":
         gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
         gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
         input_shape, input_types = data_loader.get_input_config()
@@ -300,7 +300,8 @@ def run_training(model, data_loader, to_profile, log_suffix):
         data_val = tf.data.Dataset.from_generator(
             gen_val, output_types = input_types, output_shapes = input_shape
             ).prefetch(tf.data.AUTOTUNE)
-    
+    else:
+        raise RuntimeError("Input type not supported, please select 'ROOT' or 'tf'")
 
     model_name = data_loader.model_name
     log_name = '%s_%s' % (model_name, log_suffix)
