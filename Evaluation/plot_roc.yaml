@@ -3,14 +3,15 @@ path_to_mlflow: /home/russell/TauSetupMaster/TauMLTools/Training/python/2018v1/m
 experiment_id: 6
 discriminators: # in the format -> run_id: ['curve_type_1', 'curve_type_2', ...]
   fd6d25ae34d84daca6da65bc50dd19ec: ['roc_curve']
+  14e0a79e12d74703b3f367a687edf9f7: ['roc_curve', 'roc_wp']
 reference: 
-  fd6d25ae34d84daca6da65bc50dd19ec: 'roc_curve'
+  14e0a79e12d74703b3f367a687edf9f7: 'roc_curve'
 
 # region
 vs_type: ??? # jet/e/mu/tau
 dataset_alias: ??? # sample alias asigned in yaml cfg at eval step
 pt_bin: ??? # list, e.g [20, 100], min and max
-eta_bin: [0, 2.3] # list, e.g [0, 1.5], min and max (of absolute eta)
+eta_bin: [0, 2.5] # list, e.g [0, 1.5], min and max (of absolute eta)
 dm_bin: [0,1,2,10,11] # list, e.g [0, 1, 2, 10, 11], all DMs to be included
 
 # will log the plot to the run of the first discriminator in the "discriminators" list
