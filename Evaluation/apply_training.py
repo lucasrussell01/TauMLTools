@@ -69,14 +69,10 @@ def main(cfg: DictConfig) -> None:
     # run predictions
     predictions = []
     targets = []
-    count = 0
     if cfg.verbose: print(f'\n\n--> Processing file {input_file_name}, number of taus: {n_taus}\n')
     for X,y in tqdm(gen_predict(input_file_name), total=n_taus/training_cfg['Setup']['n_tau']):
         predictions.append(model.predict(X))
         targets.append(y)
-        count+=1
-        if count>10:
-            break
     
     # concat and check for validity
     predictions = np.concatenate(predictions, axis=0)
@@ -115,14 +111,14 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == '__main__':
     repo = git.Repo(to_absolute_path('.'), search_parent_directories=True)
-    #current_git_branch = repo.active_branch.name
+    current_git_branch = repo.active_branch.name
     try:
         main()  
     except Exception as e:
         print(e)
-    # finally:
-    #     if 'stored_stash' in repo.git.stash('list'):
-    #         print(f'\n--> Checking out back branch: {current_git_branch}')
-    #         repo.git.checkout(current_git_branch)
-    #         print(f'--> Popping stashed changes\n')
-    #         repo.git.stash('pop')
+    finally:
+        if 'stored_stash' in repo.git.stash('list'):
+            print(f'\n--> Checking out back branch: {current_git_branch}')
+            repo.git.checkout(current_git_branch)
+            print(f'--> Popping stashed changes\n')
+            repo.git.stash('pop')
