@@ -24,7 +24,7 @@ cuts: ${apply_dm_cuts}
 
 # inputs/paths
 input_samples: # "sample_alias": [list of strings with tau types to be selected]
-  WJetsToLNu: ['tau', 'jet']
+  WJetsToLNu: ['tau', 'mu']
   #???: ["${vs_type}"]
 path_to_input: null
 path_to_pred: '${path_to_mlflow}/${experiment_id}/${run_id}/artifacts/predictions/{sample_alias}/*_pred.h5'
