@@ -147,7 +147,7 @@ public:
     using TauTuple = tau_tuple::TauTuple;
     using LorentzVectorM = ROOT::Math::LorentzVector<ROOT::Math::PtEtaPhiM4D<double>>;
 
-    DataLoader() :
+    DataLoader(const std::vector<std::string> & emb_data): // LR: emb_data variable
         // current_entry(start_dataset),
         innerCellGridRef(n_inner_cells, n_inner_cells, inner_cell_size, inner_cell_size),
         outerCellGridRef(n_outer_cells, n_outer_cells, outer_cell_size, outer_cell_size),
@@ -190,16 +190,43 @@ public:
         input_histogram .th2d_add(*(input_th2d .get()));
 
         target_histogram.divide(input_histogram);
-        hist_weights[tau_type] = std::make_shared<TH2D>(target_histogram.get_weights_th2d(
+        hist_weights[tau_type] = target_histogram.get_weights_th2d(
             ("w_1_"+tau_name).c_str(),
             ("w_1_"+tau_name).c_str()
-        ));
+        ); 
         if (debug) hist_weights[tau_type]->SaveAs(("Temp_"+tau_name+".root").c_str()); // It's required that all bins are filled in these histograms; save them to check incase binning is too fine and some bins are empty
 
         target_histogram.reset();
         input_histogram .reset();
       }
+      embtauTuple = std::make_unique<tau_tuple::TauTuple>("taus", emb_data); // LR: converted embedded data to tau tuple
+      emb_current_entry = 0;
+      if (embtauTuple->GetEntries()==0){ // LR: check tuple isn't empty
+        throw std::runtime_error("Embedded Tau Tuple is Empty!");
+      }
+      auto data_file_input = std::make_shared<TFile>(emb_input_spectrum.c_str()); // LR: Import embedded Spectrum
+      std::cout << "Embedded Spectrum Imported\n";
+      
+      for( auto const& [emb_tau_type, emb_tau_name] : emb_tau_types_names) // LR: Generate and scale embedded tau histogram
+      {
+        std::shared_ptr<TH2D> emb_input_th2d  = std::shared_ptr<TH2D>(dynamic_cast<TH2D*>(data_file_input ->Get(("eta_pt_hist_"+emb_tau_name).c_str())));
+        if (!emb_input_th2d) throw std::runtime_error("Embedded Data Input histogram could not be loaded for tau type "+emb_tau_name);
+        Double_t factor = target_th2d->Integral();
+        factor = factor*n_embtau/double(n_tau-n_embtau); //LR : proportion of taus to emb
+        emb_input_th2d->Scale(factor/emb_input_th2d->Integral()); // LR: Scale embedded histogram
+        std::cout << "Embedded Histogram Scaled\n";  
+        target_histogram.th2d_add(*(target_th2d.get()));
+        input_histogram .th2d_add(*(emb_input_th2d .get()));
+        target_histogram.divide(input_histogram);
+        hist_weights[emb_tau_type] = target_histogram.get_weights_th2d(
+            ("w_1_"+emb_tau_name).c_str(),
+            ("w_1_"+emb_tau_name).c_str() 
+        ); // LR: Get embedded histogram weights
+        target_histogram.reset();
+        input_histogram .reset();
+      }
       MaxDisbCheck(hist_weights, weight_thr);
+      std::cout << "Histograms Processed \n";
     }
 
     DataLoader(const DataLoader&) = delete;
@@ -230,37 +257,66 @@ public:
           tau_i = 0;
           hasData = true;
         }
-        while(tau_i < n_tau) {
-          if(current_entry == end_entry) {
-            hasFile = false;
-            return false;
-          }
-          tauTuple->GetEntry(current_entry);
-          auto& tau = const_cast<tau_tuple::Tau&>(tauTuple->data());
-
-          const auto gen_match = analysis::GetGenLeptonMatch(tau);
-          const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
-          bool tau_is_set = false;
-
-          if (gen_match &&tau.tau_byDeepTau2017v2p1VSjetraw >DeepTauVSjet_cut){
-            if (recompute_tautype){
-              tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+        while(tau_i < n_tau) { // LR: While batch not full
+          if(tau_i < n_embtau) { // LR: If there are not the maximum number of embedded taus
+            if(emb_current_entry == embtauTuple->GetEntries()) { // LR: adapt to current embedded tau entry
+              emb_current_entry = 0;
             }
+            embtauTuple->GetEntry(emb_current_entry); // LR: adapt to current embedded tau entry
+            auto& tau = const_cast<tau_tuple::Tau&>(embtauTuple->data()); 
 
-            // skip event if it is not tau_e, tau_mu, tau_jet or tau_h
-            if ( tau_types_names.find(tau.tauType) != tau_types_names.end() ) {
-              data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
-              data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // filling weights
-              FillTauBranches(tau, tau_i);
-              FillCellGrid(tau, tau_i, innerCellGridRef, true);
-              FillCellGrid(tau, tau_i, outerCellGridRef, false);
+            const auto gen_match = analysis::GetGenLeptonMatch(tau);
+            const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
+            bool tau_is_set = false;
+            if (gen_match && tau.tau_pt <500 &&tau.tau_byDeepTau2017v2p1VSjetraw >DeepTauVSjet_cut){
+              if (recompute_tautype){
+                tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+              }
+              // LR: skip event if it is not emb_tau
+              if ( emb_tau_types_names.find(tau.tauType) != emb_tau_types_names.end() ) {
+                data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // LR: filling embedded tau weights
+                FillTauBranches(tau, tau_i);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true); 
+                FillCellGrid(tau, tau_i, outerCellGridRef, false);
+                ++tau_i; // LR: increment tau index
+                tau_is_set = true;
+              }
+            }
+            if (!tau_is_set && include_mismatched)
               ++tau_i;
-              tau_is_set = true;
+            ++emb_current_entry; 
+          } else {
+            if(current_entry == end_entry) {
+              hasFile = false;
+              return false;
             }
+            tauTuple->GetEntry(current_entry);
+            auto& tau = const_cast<tau_tuple::Tau&>(tauTuple->data());
+
+            const auto gen_match = analysis::GetGenLeptonMatch(tau);
+            const auto sample_type = static_cast<analysis::SampleType>(tau.sampleType);
+            bool tau_is_set = false;
+
+            if (gen_match && tau.tau_pt <500 &&tau.tau_byDeepTau2017v2p1VSjetraw >DeepTauVSjet_cut){
+              if (recompute_tautype){
+                tau.tauType = static_cast<Int_t> (GenMatchToTauType(*gen_match, sample_type));
+              }
+
+              // LR: skip event if it is not tau_h for binary classification (02/22)
+              if(tau.tauType == 2) {
+                data->y_onehot[ tau_i * tau_types_names.size() + tau.tauType ] = 1.0; // filling labels
+                data->weight.at(tau_i) = GetWeight(tau.tauType, tau.tau_pt, std::abs(tau.tau_eta)); // filling weights
+                FillTauBranches(tau, tau_i);
+                FillCellGrid(tau, tau_i, innerCellGridRef, true);  
+                FillCellGrid(tau, tau_i, outerCellGridRef, false);
+                ++tau_i;
+                tau_is_set = true;
+              }
+            }
+            if (!tau_is_set && include_mismatched)
+              ++tau_i;
+            ++current_entry;
           }
-          if (!tau_is_set && include_mismatched)
-            ++tau_i;
-          ++current_entry;
         }
         fullData = true;
         return true;
@@ -892,6 +948,7 @@ private:
   Long64_t end_entry;
   Long64_t current_entry; // number of the current entry in the file
   Long64_t current_tau; // number of the current tau candidate
+  Long64_t emb_current_entry; // LR: number of current embedded tau entry
   Long64_t tau_i;
   const CellGrid innerCellGridRef, outerCellGridRef;
   // const std::vector<std::string> input_files;
@@ -902,6 +959,7 @@ private:
 
   std::unique_ptr<TFile> file; // to open with one file
   std::unique_ptr<TauTuple> tauTuple;
+  std::unique_ptr<TauTuple> embtauTuple; // LR: declaration of emb tau Tuple
   std::unique_ptr<Data> data;
   std::unordered_map<int ,std::shared_ptr<TH2D>> hist_weights;
 

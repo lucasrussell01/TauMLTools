@@ -1,5 +1,6 @@
 Setup:
     n_tau                :  250 # number of candidates in one batch
+    n_embtau             :  125 # LR: number embedded/batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
@@ -11,12 +12,15 @@ Setup:
 
     # tau_types_names.keys are written in accordance with tauType in the tau tuple
     tau_types_names      : { "0":"e", "1":"mu", "2":"tau", "3":"jet" }
+    emb_tau_types_names  : {"6":"emb_tau" }
     DeepTauVSjet_cut     : -1.0 # WARNING: If set to -1, conversion to C++ fails
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
     input_dir            : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
     input_spectrum       : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
     target_spectrum      : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    emb_input_dir        : "/home/russell/TauMLTools/temp_tuples/Embedded_Training" # LR: location of embedded input spectrum
+    emb_input_spectrum   : "/home/russell/TauMLTools/Training/embedded_spectrum/embedded_spectrum_comb.root" # LR: location of embedded input spectrum
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
     rm_inner_from_outer  : False
@@ -53,11 +57,11 @@ Setup:
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #300-350
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #350-400
       [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #400-450
-      [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 1.8, 2.1, 2.5], #450-500
+      [0.0, 0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.5, 2.5], #450-500
       [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #500-600
       [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #600-700
-      [0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.5], #700-1000
-                            ]
+      [0.0, 0.3, 0.6, 0.9, 1.2, 2.5], #700-1000 
+                            ] # LR: modified to reduce weight imbalance/empty bins
     xmin                 : 0
     xmax                 : 2.5
 
@@ -70,7 +74,7 @@ SetupNN:
     n_epochs             : 1
     validation_split     : 0.3
     max_queue_size       : 10
-    n_load_workers       : 4
+    n_load_workers       : 1
     input_grids          : [
                             [ GridGlobal, PfCand_electron, PfCand_gamma, Electron ], # e-gamma
                             [ GridGlobal, PfCand_muon, Muon ], # muons

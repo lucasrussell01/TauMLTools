@@ -4,8 +4,16 @@ from tqdm import tqdm
 
 from DataLoaderBase import *
 
+def ListToVector(l, elem_type): # LR: added ListToVector
+    vec = R.std.vector(elem_type)()
+    for elem in l:
+        vec.push_back(elem)
+    return vec
+
+#LR: added emb_data_files
 def LoaderThread(queue_out,
                  queue_files,
+                 emb_data_files,
                  terminators,
                  identifier,
                  input_grids,
@@ -20,7 +28,7 @@ def LoaderThread(queue_out,
                  active_features,
                  cell_locations):
 
-    data_source = DataSource(queue_files)
+    data_source = DataSource(queue_files, emb_data_files) # LR: input emb_data_files
     put_next = True
 
     while put_next:
@@ -103,14 +111,22 @@ class DataLoader (DataLoaderBase):
             data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') 
             self.train_files, self.val_files = \
                 np.split(data_files, [int(len(data_files)*(1-self.validation_split))])
-
             print("Files for training:", len(self.train_files))
             print("Files for validation:", len(self.val_files))
+
+            emb_data_files = glob.glob(f'{self.config["Setup"]["emb_input_dir"]}/*.root')
+            emb_train_files, emb_val_files = \
+                np.split(emb_data_files, [int(len(emb_data_files)*(1-self.validation_split))]) 
+            self.emb_train_files = ListToVector(emb_train_files, "string") # LR: Embedded training and val files
+            self.emb_val_files = ListToVector(emb_val_files, "string")
+            print("Embedded Files for training:", len(self.emb_train_files))
+            print("Embedded Files for validation:", len(self.emb_val_files))
 
 
     def get_generator(self, primary_set = True, return_truth = True, return_weights = True, show_progress = False):
 
         _files = self.train_files if primary_set else self.val_files
+        emb_data_files = self.emb_train_files if primary_set else self.emb_val_files # LR: emb files training or validation
         if len(_files)==0:
             raise RuntimeError(("Taining" if primary_set else "Validation")+\
                                " file list is empty.")
@@ -135,10 +151,10 @@ class DataLoader (DataLoaderBase):
             for i in range(self.n_load_workers):
                 processes.append(
                 mp.Process(target = LoaderThread,
-                        args = (queue_out, queue_files, terminators, i,
+                        args = (queue_out, queue_files, emb_data_files, terminators, i,
                                 self.input_grids, self.batch_size, self.n_inner_cells,
                                 self.n_outer_cells, self.n_flat_features, self.n_grid_features,
-                                self.tau_types, return_truth, return_weights, self.active_features, self.cell_locations)))
+                                self.tau_types, return_truth, return_weights, self.active_features, self.cell_locations))) # LR: added emb_files 
                 processes[-1].start()
 
             while finish_counter < self.n_load_workers:
@@ -150,7 +166,6 @@ class DataLoader (DataLoaderBase):
                     if show_progress:
                         pbar.update(1)
                     yield converter(item)
-
             queue_out.clear()
             ugly_clean(queue_files)
 
@@ -171,7 +186,7 @@ class DataLoader (DataLoaderBase):
         >       y_pred = ...
         '''
         assert self.batch_size == 1
-        data_loader = R.DataLoader()
+        data_loader = R.DataLoader(emb_data_files) # LR: Call C++ Dataloader with embedded tau files as argument 
         converter = torch_to_tf(return_truth=True, return_weights=False)
         def read_from_file(file_path):
             data_loader.ReadFile(R.std.string(file_path), 0, -1)
