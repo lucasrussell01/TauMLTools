@@ -267,16 +267,25 @@ def compile_model(model, opt_name, learning_rate):
 
 def run_training(model, data_loader, to_profile, log_suffix):
 
-    gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
-    gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
-    input_shape, input_types = data_loader.get_input_config()
-
-    data_train = tf.data.Dataset.from_generator(
-        gen_train, output_types = input_types, output_shapes = input_shape
-        ).prefetch(tf.data.AUTOTUNE)
-    data_val = tf.data.Dataset.from_generator(
-        gen_val, output_types = input_types, output_shapes = input_shape
-        ).prefetch(tf.data.AUTOTUNE)
+    if data_loader.input_type == "tf":
+        total_batches = data_loader.n_batches + data_loader.n_batches_val
+        print(total_batches)
+        dataset = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+        data_train = dataset.take(data_loader.n_batches) #take first values for training
+        data_val = dataset.skip(data_loader.n_batches).take(data_loader.n_batches_val) # take next values for validation
+        print("Dataset Loaded with TensorFlow")
+    elif data_loader.input_type == "ROOT":
+        gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights)
+        gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights)
+        input_shape, input_types = data_loader.get_input_config()
+        data_train = tf.data.Dataset.from_generator(
+            gen_train, output_types = input_types, output_shapes = input_shape
+            ).prefetch(tf.data.AUTOTUNE)
+        data_val = tf.data.Dataset.from_generator(
+            gen_val, output_types = input_types, output_shapes = input_shape
+            ).prefetch(tf.data.AUTOTUNE)
+    else:
+        raise RuntimeError("Input type not supported, please select 'ROOT' or 'tf'")
 
     model_name = data_loader.model_name
     log_name = '%s_%s' % (model_name, log_suffix)
