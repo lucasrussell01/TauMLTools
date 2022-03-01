@@ -102,8 +102,12 @@ class DataLoader (DataLoaderBase):
         self.use_weights = self.config["Setup"]["use_weights"]
         self.DeepTauVSjet_cut  = self.config["Setup"]["DeepTauVSjet_cut"]
         self.cell_locations = self.config["SetupNN"]["cell_locations"]
+        print(f"Active Cones: {self.cell_locations}")
         self.rm_inner_from_outer = self.config["Setup"]["rm_inner_from_outer"]
+        if self.rm_inner_from_outer:
+            print("Removed Inner Cone Area from Outer Cone")
         self.active_features = self.config["SetupNN"]["active_features"]
+        print(f"Active Features: {self.active_features}")
         self.input_type = self.config["Setup"]["input_type"]
         self.tf_input_dir = self.config["Setup"]["tf_input_dir"]
 

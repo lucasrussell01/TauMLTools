@@ -31,6 +31,30 @@ sys.path.insert(0, "..")
 from common import *
 import DataLoader
 
+def reshape_tensor(x, y, weights, target): 
+    x_out = []
+    count = 0
+    for elem in x:
+        count +=1
+        if count in target:
+            x_out.append(elem)
+    return tuple(x_out), y, weights
+
+def rm_inner(x, y, weights): 
+    x_out = []
+    for elem in x[:4]:
+        x_out.append(elem)
+    for elem in x[4:7]:
+        s = elem.get_shape().as_list()
+        m = np.ones((21, 21, s[3])) 
+        m[8:13, 8:13, :] = 0
+        m = m[None,:, :, :]
+        t = tf.constant(m, dtype=tf.float32)
+        out = tf.multiply(elem, t)
+        x_out.append(out)
+    print("Removed Inner Area From Outer Cone")
+    return tuple(x_out), y, weights
+
 class NetSetup:
     def __init__(self, activation, dropout_rate=0, reduction_rate=1, kernel_regularizer=None):
         self.activation = activation
@@ -269,8 +293,26 @@ def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.input_type == "tf":
         total_batches = data_loader.n_batches + data_loader.n_batches_val
-        print(total_batches)
-        dataset = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+        ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+
+        if data_loader.rm_inner_from_outer:
+            my_ds = ds.map(rm_inner)
+        else: 
+            my_ds = ds
+
+        cell_locations = data_loader.cell_locations
+        print(cell_locations)
+        active_features = data_loader.active_features
+        target = [] #list of elements to be kept
+        if "TauFlat" in active_features:
+            target.append(1)
+        if "inner" in cell_locations:
+            target.extend([2,3,4])
+        if "outer" in cell_locations:
+            target.extend([5,6,7])
+        print(target)
+
+        dataset = my_ds.map(lambda x, y, weights: reshape_tensor(x, y, weights, target))
         data_train = dataset.take(data_loader.n_batches) #take first values for training
         data_val = dataset.skip(data_loader.n_batches).take(data_loader.n_batches_val) # take next values for validation
         print("Dataset Loaded with TensorFlow")
