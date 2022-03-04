@@ -339,6 +339,10 @@ def run_training(model, data_loader, to_profile, log_suffix):
     time_checkpoint = TimeCheckpoint(12*60*60, log_name)
     callbacks = [time_checkpoint, csv_log]
 
+    #log_name+"_best.tf"
+    # model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(filepath="~/test", save_weights_only=True, monitor='val_accuracy', mode='max',save_best_only=True)
+    # callbacks.append(model_checkpoint_callback)
+    
     logs = log_name + '_' + datetime.now().strftime("%Y.%m.%d(%H:%M)")
     tboard_callback = tf.keras.callbacks.TensorBoard(log_dir = logs,
                                                      profile_batch = ('100, 300' if to_profile else 0),
