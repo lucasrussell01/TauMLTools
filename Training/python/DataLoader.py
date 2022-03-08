@@ -34,9 +34,9 @@ def LoaderThread(queue_out,
         X_all = tuple(X_all)
 
         if return_weights:
-            weights = GetData.getdata(data.weight, -1)
+            weights = GetData.getdata(data.weight, -1, area="weights")
         if return_truth:
-            Y = GetData.getdata(data.y_onehot, (batch_size, tau_types))
+            Y = GetData.getdata(data.y_onehot, (batch_size, tau_types), area="truth")
 
         if return_truth and return_weights:
             item = (X_all, Y, weights)
