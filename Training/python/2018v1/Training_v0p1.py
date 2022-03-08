@@ -55,6 +55,20 @@ def rm_inner(x, y, weights):
     print("Removed Inner Area From Outer Cone")
     return tuple(x_out), y, weights
 
+def rm_feats(x, y, weights, rm_index): 
+    x_out = []
+    m = np.ones((43)) 
+    for i in rm_index:
+        m[i] = 0
+    m = m[None,:]
+    rm = tf.constant(m, dtype=tf.float32)
+    out = tf.multiply(x[0], rm)
+    x_out.append(out)
+    print("Removed TensorFlow Disabled Features")
+    for elem in x[1:]:
+        x_out.append(elem)
+    return tuple(x_out), y, weights
+
 class NetSetup:
     def __init__(self, activation, dropout_rate=0, reduction_rate=1, kernel_regularizer=None):
         self.activation = activation
@@ -293,7 +307,9 @@ def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.input_type == "tf":
         total_batches = data_loader.n_batches + data_loader.n_batches_val
-        ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+        data = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+
+        ds = data.map(lambda x, y, weights: rm_feats(x, y, weights, data_loader.tau_flat_disabled)) #remove feats by setting weights to zero
 
         if data_loader.rm_inner_from_outer:
             my_ds = ds.map(rm_inner)

@@ -26,6 +26,7 @@ Setup:
     rm_inner_from_outer  : False
     input_type           : "tf" # supported 'ROOT' or 'tf'
     tf_input_dir         : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/tf_datasets/emb_21k_99cut"
+    tau_flat_disabled    : [16, 21, 3, 29, 5] #indexes of elements to disable
 
     # here define variables for the Histogram_2D class
     yaxis                : [
@@ -67,11 +68,11 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 3 #17000
-    n_batches_val        : 1 #4000
+    n_batches            : 17000
+    n_batches_val        : 4000
     n_batches_log        : 1 #100 # monitor every n batches in tensorboard
     epoch                : 0
-    n_epochs             : 3
+    n_epochs             : 4
     validation_split     : 0.3
     max_queue_size       : 10
     n_load_workers       : 1
@@ -466,7 +467,7 @@ Features_all :
               - muon_n_hits_RPC_4: [null, null, "linear", 0., 2.]
 
 Features_disable :
-    TauFlat : ["tau_phi"]
+    TauFlat : ["tau_phi"] #, "tau_puCorrPtSum", "tau_ip3d", "tau_mass", "tau_flightLength_sig"] # disable these with tensorflow indexing
     GridGlobal : []
     PfCand_electron : [ ]
     PfCand_muon : [ ]

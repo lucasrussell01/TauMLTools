@@ -110,7 +110,7 @@ class DataLoader (DataLoaderBase):
         print(f"Active Features: {self.active_features}")
         self.input_type = self.config["Setup"]["input_type"]
         self.tf_input_dir = self.config["Setup"]["tf_input_dir"]
-
+        self.tau_flat_disabled = self.config["Setup"]["tau_flat_disabled"]
         if self.input_type == "ROOT":
             data_files = glob.glob(f'{self.config["Setup"]["input_dir"]}/*.root') 
             self.train_files, self.val_files = \
