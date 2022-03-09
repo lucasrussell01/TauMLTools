@@ -570,15 +570,15 @@ public:
 
               if(hasTrackDetails){
 
-              fillGrid(Br::pfCand_muon_dxy, tau.pfCand_dxy.at(pfCand_idx));
-              fillGrid(Br::pfCand_muon_dxy_sig, std::abs(tau.pfCand_dxy.at(pfCand_idx)) / tau.pfCand_dxy_error.at(pfCand_idx));
-              fillGrid(Br::pfCand_muon_dz, tau.pfCand_dz.at(pfCand_idx));
-              fillGrid(Br::pfCand_muon_dz_sig, std::abs(tau.pfCand_dz.at(pfCand_idx)) / tau.pfCand_dz_error.at(pfCand_idx));
+                fillGrid(Br::pfCand_muon_dxy, tau.pfCand_dxy.at(pfCand_idx));
+                fillGrid(Br::pfCand_muon_dxy_sig, std::abs(tau.pfCand_dxy.at(pfCand_idx)) / tau.pfCand_dxy_error.at(pfCand_idx));
+                fillGrid(Br::pfCand_muon_dz, tau.pfCand_dz.at(pfCand_idx));
+                fillGrid(Br::pfCand_muon_dz_sig, std::abs(tau.pfCand_dz.at(pfCand_idx)) / tau.pfCand_dz_error.at(pfCand_idx));
 
-              if(tau.pfCand_track_ndof.at(pfCand_idx) > 0) {
-                fillGrid(Br::pfCand_muon_track_chi2_ndof, tau.pfCand_track_chi2.at(pfCand_idx) / tau.pfCand_track_ndof.at(pfCand_idx));
-                fillGrid(Br::pfCand_muon_track_ndof, tau.pfCand_track_ndof.at(pfCand_idx));
-              }
+                if(tau.pfCand_track_ndof.at(pfCand_idx) > 0) {
+                  fillGrid(Br::pfCand_muon_track_chi2_ndof, tau.pfCand_track_chi2.at(pfCand_idx) / tau.pfCand_track_ndof.at(pfCand_idx));
+                  fillGrid(Br::pfCand_muon_track_ndof, tau.pfCand_track_ndof.at(pfCand_idx));
+                }
               }
             }
         }
@@ -776,7 +776,7 @@ public:
             fillGrid(Br::muon_dphi, DeltaPhi(tau.muon_phi.at(idx), tau.tau_phi));
 
             fillGrid(Br::muon_dxy, tau.muon_dxy.at(idx));
-            if(tau.muon_dxy_error.at(idx) != 0)
+            if(std::isnormal(tau.muon_dxy_error.at(idx)) && std::isnormal(tau.muon_dxy.at(idx))) 
               fillGrid(Br::muon_dxy_sig, std::abs(tau.muon_dxy.at(idx)) / tau.muon_dxy_error.at(idx));
 
             const bool normalizedChi2_valid = tau.muon_normalizedChi2.at(idx) >= 0;
