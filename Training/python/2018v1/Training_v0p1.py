@@ -307,9 +307,9 @@ def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.input_type == "tf":
         total_batches = data_loader.n_batches + data_loader.n_batches_val
-        data = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
+        ds = tf.data.experimental.load(data_loader.tf_input_dir, compression="GZIP") # import dataset
 
-        ds = data.map(lambda x, y, weights: rm_feats(x, y, weights, data_loader.tau_flat_disabled)) #remove feats by setting weights to zero
+        #ds = data.map(lambda x, y, weights: rm_feats(x, y, weights, data_loader.tau_flat_disabled)) #remove feats by setting weights to zero
 
         if data_loader.rm_inner_from_outer:
             my_ds = ds.map(rm_inner)
@@ -317,8 +317,9 @@ def run_training(model, data_loader, to_profile, log_suffix):
             my_ds = ds
 
         cell_locations = data_loader.cell_locations
-        print(cell_locations)
+        print("Cell Locations: ", cell_locations)
         active_features = data_loader.active_features
+        print("Active Features: ", active_features)
         target = [] #list of elements to be kept
         if "TauFlat" in active_features:
             target.append(1)
@@ -326,7 +327,7 @@ def run_training(model, data_loader, to_profile, log_suffix):
             target.extend([2,3,4])
         if "outer" in cell_locations:
             target.extend([5,6,7])
-        print(target)
+        #print(target)
 
         dataset = my_ds.map(lambda x, y, weights: reshape_tensor(x, y, weights, target))
         data_train = dataset.take(data_loader.n_batches) #take first values for training
