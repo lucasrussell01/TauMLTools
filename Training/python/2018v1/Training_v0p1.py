@@ -293,6 +293,24 @@ def compile_model(model, opt_name, learning_rate):
     metric_names = {(m if isinstance(m, str) else m.__name__): '' for m in metrics}
     mlflow.log_dict(metric_names, 'input_cfg/metric_names.json')
 
+
+
+
+@tf.function
+def train_step(x, y, model):
+    with tf.GradientTape() as tape:
+        logits = model(x, training=True)
+        loss_value = TauLosses.tau_crossentropy_v2(y, logits)
+        # Add any extra losses created during the forward pass.
+        #loss_value += sum(model.losses)
+    grads = tape.gradient(loss_value, model.trainable_weights)
+    model.optimizer.apply_gradients(zip(grads, model.trainable_weights))
+    #train_acc_metric.update_state(y, logits)
+    return loss_value
+
+
+
+
 def run_training(model, data_loader, to_profile, log_suffix):
 
     if data_loader.input_type == "tf":
@@ -348,9 +366,42 @@ def run_training(model, data_loader, to_profile, log_suffix):
                                                      update_freq = ( 0 if data_loader.n_batches_log<=0 else data_loader.n_batches_log ))
     callbacks.append(tboard_callback)
 
-    fit_hist = model.fit(data_train, validation_data = data_val,
-                         epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
-                         callbacks = callbacks)
+    
+    #loss_fn = TauLosses.tau_crossentropy_v2
+
+    epochs = 2
+    for epoch in range(epochs):
+        print("\nStart of epoch %d" % (epoch,))
+        start_time = time.time()
+
+        # Iterate over the batches of the dataset.
+        for step, (x, y, weights) in enumerate(data_train):
+
+            # with tf.GradientTape() as tape:
+            #     logits = model(x, training=True)
+            #     loss_value = TauLosses.tau_crossentropy_v2(y, logits)
+            #     # Add any extra losses created during the forward pass.
+            #     #loss_value += sum(model.losses)
+            # grads = tape.gradient(loss_value, model.trainable_weights)
+            # optimizer.apply_gradients(zip(grads, model.trainable_weights))
+            # train_acc_metric.update_state(y, logits)
+            loss_value = train_step(x,y,model)
+
+            # Log every 200 batches.
+            if step % 10 == 0:
+                print(f"Training loss (for one batch) at step {step} : {np.shape(loss_value)}")
+                print("Seen so far: %d samples" % ((step + 1) * data_loader.batch_size))
+
+        # Display metrics at the end of each epoch.
+        # train_acc = train_acc_metric.result()
+        # print("Training acc over epoch: %.4f" % (float(train_acc),))
+
+        # Reset training metrics at the end of each epoch
+        # train_acc_metric.reset_states()
+
+    # fit_hist = model.fit(data_train, validation_data = data_val,
+    #                      epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
+    #                      callbacks = callbacks)
 
     model_path = f"{log_name}_final.tf"
     model.save(model_path, save_format="tf")
