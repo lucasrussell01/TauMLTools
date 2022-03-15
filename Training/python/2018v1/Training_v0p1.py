@@ -33,6 +33,8 @@ import DataLoader
 
 
 class CustomModel(keras.Model):
+    _loss_tracker = keras.metrics.Mean(name="loss")
+
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
         # on what you pass to `fit()`.
@@ -55,11 +57,17 @@ class CustomModel(keras.Model):
         # Update weights
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         # Update metrics (includes the metric that tracks the loss)
-        loss_tracker.update_state(loss)
+        self.loss_tracker().update_state(loss, sample_weight=sample_weight)
         self.compiled_metrics.update_state(y, y_pred)
         # Return a dict mapping metric names to current value
         print("Bing bong CustomModel")
-        return {"loss": loss_tracker.result()} #, m.name: m.result() for m in self.metrics}
+        metrics_out =  {m.name: m.result() for m in self.metrics}
+        metrics_out["LOSS TEST"] = self.loss_tracker().result()
+        return metrics_out
+        #return {"loss": self.loss_tracker().result(), m.name: m.result() for m in self.metrics} #
+
+    def loss_tracker(self):
+        return type(self)._loss_tracker
 
 def reshape_tensor(x, y, weights, active): 
     x_out = []
@@ -430,7 +438,6 @@ def run_training(model, data_loader, to_profile, log_suffix):
     #     print(val_metrics)
     #     for m in model.metrics:
     #         m.reset_state()
-    loss_tracker = keras.metrics.Mean(name="loss")
 
     fit_hist = model.fit(data_train, validation_data = data_val,
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
