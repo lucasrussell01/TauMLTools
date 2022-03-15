@@ -31,6 +31,35 @@ sys.path.insert(0, "..")
 from common import *
 import DataLoader
 
+
+class CustomModel(keras.Model):
+    def train_step(self, data):
+        # Unpack the data. Its structure depends on your model and
+        # on what you pass to `fit()`.
+        if len(data) == 3:
+            x, y, sample_weight = data
+        else:
+            sample_weight = None
+            x, y = data
+
+        with tf.GradientTape() as tape:
+            y_pred = self(x, training=True)  # Forward pass
+            # Compute the loss value
+            # (the loss function is configured in `compile()`)
+            tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
+            loss = tf.math.reduce_sum(tau_crossentropy_v2)  #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+
+        # Compute gradients
+        trainable_vars = self.trainable_variables
+        gradients = tape.gradient(loss, trainable_vars)
+        # Update weights
+        self.optimizer.apply_gradients(zip(gradients, trainable_vars))
+        # Update metrics (includes the metric that tracks the loss)
+        self.compiled_metrics.update_state(y, y_pred)
+        # Return a dict mapping metric names to current value
+        print("Bing bong CustomModel")
+        return {m.name: m.result() for m in self.metrics}
+
 def reshape_tensor(x, y, weights, active): 
     x_out = []
     count = 0
@@ -270,7 +299,7 @@ def create_model(net_config, model_name):
                          kernel_initializer=dense_net_setup.kernel_init)(final_dense)
     softmax_output = Activation("softmax", name="main_output")(output_layer)
 
-    model = Model(input_layers, softmax_output, name=model_name)
+    model = CustomModel(input_layers, softmax_output, name=model_name)
     return model
 
 def compile_model(model, opt_name, learning_rate):
@@ -278,7 +307,6 @@ def compile_model(model, opt_name, learning_rate):
     opt = getattr(tf.keras.optimizers, opt_name)(learning_rate=learning_rate)
     #opt = tf.keras.optimizers.Nadam(learning_rate=learning_rate, schedule_decay=1e-4)
     # opt = Nadam(lr=learning_rate, beta_1=1e-4)
-
     metrics = [
         "accuracy", TauLosses.tau_crossentropy, TauLosses.tau_crossentropy_v2,
         TauLosses.Le, TauLosses.Lmu, TauLosses.Ljet,
@@ -371,37 +399,41 @@ def run_training(model, data_loader, to_profile, log_suffix):
 
     
 
-    epochs = data_loader.n_epochs
-    for epoch in range(epochs):
+    # epochs = data_loader.n_epochs
+    # for epoch in range(epochs):
         
-        print("\nStart of epoch %d" % (epoch,))
-        start_time = time.time()
-        # Iterate over the batches of the dataset.
-        for step, (x, y, weights) in enumerate(data_train):
-            loss_value = train_step(x,y,model)
-            # Print every x batches.
-            if step % 10 == 0:
-                print(f"Training loss (for one batch) at step {step} : {np.sum((loss_value))}")
-                print("Seen so far: %d samples" % ((step + 1) * data_loader.batch_size))
+    #     print("\nStart of epoch %d" % (epoch,))
+    #     start_time = time.time()
+    #     # Iterate over the batches of the dataset.
+    #     for step, (x, y, weights) in enumerate(data_train):
+    #         loss_value = train_step(x,y,model)
+    #         # Print every x batches.
+    #         if step % 10 == 0:
+    #             print(f"Training loss (for one batch) at step {step} : {np.sum((loss_value))}")
+    #             print("Seen so far: %d samples" % ((step + 1) * data_loader.batch_size))
 
-        # Display metrics at the end of each epoch:
-        metrics = {m.name: m.result() for m in model.metrics}
-        print(metrics)
-        # Reset metrics at end of epoch:
-        for m in model.metrics:
-            m.reset_state()
+    #     # Display metrics at the end of each epoch:
+    #     metrics = {m.name: m.result() for m in model.metrics}
+    #     print(metrics)
+    #     # Reset metrics at end of epoch:
+    #     for m in model.metrics:
+    #         m.reset_state()
 
         
-        print("VALIDATION --------------------------")
-        # Run a validation loop at the end of each epoch.
-        for (x, y, weights) in data_val:
-            test_step(x, y, model)
+    #     print("VALIDATION --------------------------")
+    #     # Run a validation loop at the end of each epoch.
+    #     for (x, y, weights) in data_val:
+    #         test_step(x, y, model)
 
-        val_metrics = {m.name: m.result() for m in model.metrics}
-        print(val_metrics)
-        for m in model.metrics:
-            m.reset_state()
+    #     val_metrics = {m.name: m.result() for m in model.metrics}
+    #     print(val_metrics)
+    #     for m in model.metrics:
+    #         m.reset_state()
+    loss_tracker = keras.metrics.Mean(name="loss")
 
+    fit_hist = model.fit(data_train, validation_data = data_val,
+                         epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
+                         callbacks = callbacks)
 
     model_path = f"{log_name}_final.tf"
     model.save(model_path, save_format="tf")
