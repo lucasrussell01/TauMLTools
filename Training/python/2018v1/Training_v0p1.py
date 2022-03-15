@@ -47,7 +47,7 @@ class CustomModel(keras.Model):
             # Compute the loss value
             # (the loss function is configured in `compile()`)
             tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
-            loss = tf.math.reduce_sum(tau_crossentropy_v2)  #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+            loss = tau_crossentropy_v2 #tf.math.reduce_sum(tau_crossentropy_v2)  #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
 
         # Compute gradients
         trainable_vars = self.trainable_variables
@@ -55,10 +55,11 @@ class CustomModel(keras.Model):
         # Update weights
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         # Update metrics (includes the metric that tracks the loss)
+        loss_tracker.update_state(loss)
         self.compiled_metrics.update_state(y, y_pred)
         # Return a dict mapping metric names to current value
         print("Bing bong CustomModel")
-        return {m.name: m.result() for m in self.metrics}
+        return {"loss": loss_tracker.result()} #, m.name: m.result() for m in self.metrics}
 
 def reshape_tensor(x, y, weights, active): 
     x_out = []
