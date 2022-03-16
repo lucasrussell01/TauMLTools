@@ -33,7 +33,7 @@ import DataLoader
 
 
 class CustomModel(keras.Model):
-    _loss_tracker = keras.metrics.Mean(name="loss")
+    _loss_tracker = keras.metrics.Mean(name="manual_loss")
     _pure_loss_tracker = keras.metrics.Mean(name = "x_entropy")
 
     def loss_tracker(self):
@@ -56,8 +56,8 @@ class CustomModel(keras.Model):
             # Compute the loss value
             # (the loss function is configured in `compile()`)
             tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
-            loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-            pure_loss = tau_crossentropy_v2
+            loss = tau_crossentropy_v2 # self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+            # pure_loss = tau_crossentropy_v2
 
         # Compute gradients
         trainable_vars = self.trainable_variables
@@ -65,14 +65,17 @@ class CustomModel(keras.Model):
         # Update weights
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         # Update metrics and loss tracker
-        self.loss_tracker().update_state(loss)
+        self.loss_tracker().update_state(loss, sample_weight=sample_weight )
         self.compiled_metrics.update_state(y, y_pred)
-        self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
+        #self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
         # Return a dict mapping metric names to current value
         print("Training CustomModel")
         metrics_out =  {m.name: m.result() for m in self.metrics}
-        metrics_out["LOSS TEST"] = self.loss_tracker().result()
-        metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
+        metrics_out["LOSS TEST 1"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 2"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 3"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 4"] = self.loss_tracker().result()
+        #metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
         return metrics_out
         #return {"loss": self.loss_tracker().result(), m.name: m.result() for m in self.metrics} #
     
@@ -87,17 +90,20 @@ class CustomModel(keras.Model):
         y_pred = self(x, training=False)
         # Updates the metrics tracking the loss
         tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
-        loss = self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-        pure_loss = tau_crossentropy_v2
+        loss = tau_crossentropy_v2 #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+        #pure_loss = tau_crossentropy_v2
         # Update the metrics.
-        self.loss_tracker().update_state(loss)
-        self.compiled_metrics.update_state(y, y_pred)
-        self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
+        self.loss_tracker().update_state(loss, sample_weight=sample_weight)
+        self.compiled_metrics.update_state(y, y_pred, sample_weight=sample_weight)
+        #self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
         # Return a dict mapping metric names to current value.
         # Note that it will include the loss (tracked in self.metrics).
         metrics_out = {m.name: m.result() for m in self.metrics}
-        metrics_out["LOSS TEST"] = self.loss_tracker().result()
-        metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
+        metrics_out["LOSS TEST 1"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 2"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 3"] = self.loss_tracker().result()
+        metrics_out["LOSS TEST 4"] = self.loss_tracker().result()
+        #metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
         return metrics_out
     
     @property
@@ -119,7 +125,7 @@ class CustomModel(keras.Model):
 
         #Add the custom loss tracker we created:
         metrics.append(self.loss_tracker()) 
-        metrics.append(self.pure_loss_tracker()) 
+        #metrics.append(self.pure_loss_tracker()) 
         return metrics
 
 def reshape_tensor(x, y, weights, active): 
