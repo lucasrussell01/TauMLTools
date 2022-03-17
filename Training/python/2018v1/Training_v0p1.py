@@ -30,17 +30,23 @@ from omegaconf import DictConfig, OmegaConf
 sys.path.insert(0, "..")
 from common import *
 import DataLoader
+from tqdm import tqdm
 
+custom = 1
 
 class CustomModel(keras.Model):
     _loss_tracker = keras.metrics.Mean(name="manual_loss")
-    _pure_loss_tracker = keras.metrics.Mean(name = "x_entropy")
+    _reg_loss_tracker = keras.metrics.Mean(name = "reg_loss")
+    _compiled_loss_tracker = keras.metrics.Mean(name="compiled_loss")
 
     def loss_tracker(self):
         return type(self)._loss_tracker
 
-    def pure_loss_tracker(self):
-        return type(self)._pure_loss_tracker
+    def reg_loss_tracker(self):
+        return type(self)._reg_loss_tracker
+
+    def compiled_loss_tracker(self):
+        return type(self)._compiled_loss_tracker
 
     def train_step(self, data):
         # Unpack the data. Its structure depends on your model and
@@ -56,8 +62,10 @@ class CustomModel(keras.Model):
             # Compute the loss value
             # (the loss function is configured in `compile()`)
             tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
-            loss = tau_crossentropy_v2 # self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-            # pure_loss = tau_crossentropy_v2
+            loss = tau_crossentropy_v2  # self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+            compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight) #, regularization_losses=self.losses)
+            print("Losses:", self.losses)
+            reg_loss = self.losses
 
         # Compute gradients
         trainable_vars = self.trainable_variables
@@ -65,14 +73,16 @@ class CustomModel(keras.Model):
         # Update weights
         self.optimizer.apply_gradients(zip(gradients, trainable_vars))
         # Update metrics and loss tracker
-        self.loss_tracker().update_state(loss, sample_weight=sample_weight )
-        #self.compiled_metrics.update_state(y, y_pred)
-        #self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
+        self.loss_tracker().update_state(loss, sample_weight=sample_weight)
+        self.compiled_loss_tracker().update_state(compiled_loss) #can't put weighst as already = 1
+        self.compiled_metrics.update_state(y, y_pred, sample_weight)
+        self.reg_loss_tracker().update_state(reg_loss)
         # Return a dict mapping metric names to current value
         print("Training CustomModel")
         metrics_out =  {m.name: m.result() for m in self.metrics}
         metrics_out["LOSS TEST"] = self.loss_tracker().result()
-        #metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
+        metrics_out["COMPILED LOSS TEST"] = self.compiled_loss_tracker().result()
+        metrics_out["REG LOSS TEST"] = self.reg_loss_tracker().result()
         return metrics_out
         #return {"loss": self.loss_tracker().result(), m.name: m.result() for m in self.metrics} #
     
@@ -87,17 +97,20 @@ class CustomModel(keras.Model):
         y_pred = self(x, training=False)
         # Updates the metrics tracking the loss
         tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
-        loss = tau_crossentropy_v2 #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-        #pure_loss = tau_crossentropy_v2
+        loss = tau_crossentropy_v2  #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
+        compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight) #, regularization_losses=self.losses)
+        reg_loss = self.losses # tf.compat.v1.losses.get_regularization_loss(name="reg_loss") # deosnt work properly
         # Update the metrics.
         self.loss_tracker().update_state(loss, sample_weight=sample_weight)
-        #self.compiled_metrics.update_state(y, y_pred, sample_weight=sample_weight)
-        #self.pure_loss_tracker().update_state(pure_loss, sample_weight=sample_weight)
+        self.compiled_metrics.update_state(y, y_pred, sample_weight=sample_weight)
+        self.compiled_loss_tracker().update_state(compiled_loss)
+        self.reg_loss_tracker().update_state(reg_loss)
         # Return a dict mapping metric names to current value.
-        # Note that it will include the loss (tracked in self.metrics).
+        # Note that it will include the losses (tracked in self.metrics).
         metrics_out = {m.name: m.result() for m in self.metrics}
         metrics_out["LOSS TEST"] = self.loss_tracker().result()
-        #metrics_out["PURE LOSS TEST"] = self.pure_loss_tracker().result()
+        metrics_out["COMPILED LOSS TEST"] = self.compiled_loss_tracker().result()
+        metrics_out["REG LOSS TEST"] = self.reg_loss_tracker().result()
         return metrics_out
     
     @property
@@ -106,19 +119,21 @@ class CustomModel(keras.Model):
         # called automatically at the start of each epoch
         # or at the start of `evaluate()`
         metrics = []
-        # if self._is_compiled:
-        #     #  Track `LossesContainer` and `MetricsContainer` objects
-        #     # so that attr names are not load-bearing.
-        #     if self.compiled_loss is not None:
-        #         metrics += self.compiled_loss.metrics
-        #     if self.compiled_metrics is not None:
-        #         metrics += self.compiled_metrics.metrics
+        if self._is_compiled:
+            #  Track `LossesContainer` and `MetricsContainer` objects
+            # so that attr names are not load-bearing.
+            if self.compiled_loss is not None:
+                metrics += self.compiled_loss.metrics
+            if self.compiled_metrics is not None:
+                metrics += self.compiled_metrics.metrics
 
         # for l in self._flatten_layers():
         #     metrics.extend(l._metrics)  # pylint: disable=protected-access
 
         #Add the custom loss tracker we created:
         metrics.append(self.loss_tracker()) 
+        metrics.append(self.compiled_loss_tracker())
+        metrics.append(self.reg_loss_tracker())
         #metrics.append(self.pure_loss_tracker()) 
         return metrics
 
@@ -361,7 +376,10 @@ def create_model(net_config, model_name):
                          kernel_initializer=dense_net_setup.kernel_init)(final_dense)
     softmax_output = Activation("softmax", name="main_output")(output_layer)
 
-    model = CustomModel(input_layers, softmax_output, name=model_name)
+    if custom:
+        model = CustomModel(input_layers, softmax_output, name=model_name)
+    else:
+        model = Model(input_layers, softmax_output, name=model_name) #Custom model option here
     return model
 
 def compile_model(model, opt_name, learning_rate):
@@ -384,23 +402,33 @@ def compile_model(model, opt_name, learning_rate):
     mlflow.log_dict(metric_names, 'input_cfg/metric_names.json')
 
 
-
-
 @tf.function
-def train_step(x, y, model):
+def train_step(data, model, loss_tracker,x_entropy):
+    x, y, sample_weight = data
     with tf.GradientTape() as tape:
-        logits = model(x, training=True)
-        tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, logits)
+        y_pred = model(x, training=True)
+        tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
         loss_value = tau_crossentropy_v2
-    model.compiled_metrics.update_state(y, logits)
     grads = tape.gradient(loss_value, model.trainable_weights)
     model.optimizer.apply_gradients(zip(grads, model.trainable_weights))
-    return loss_value
+    x_entropy_value = TauLosses.tau_crossentropy_v2(y, y_pred)
+    loss_tracker.update_state(loss_value, sample_weight=sample_weight)
+    x_entropy.update_state(x_entropy_value, sample_weight=sample_weight)
+    mean_loss = (tf.reduce_sum(sample_weight * loss_value) / tf.reduce_sum(sample_weight))
+    return {"loss_value": mean_loss, "loss_metric" : loss_tracker.result(), "x_entropy_metric": x_entropy.result()}
 
 @tf.function
-def test_step(x, y, model):
-    val_logits = model(x, training=False)
-    model.compiled_metrics.update_state(y, val_logits) #assuming not a seperate pack of validation metrics
+def test_step(data, model, loss_tracker, x_entropy):
+    if len(data) == 3:
+        x, y, sample_weight = data
+    y_pred = model(x, training=False)
+    tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
+    loss = tau_crossentropy_v2
+    loss_tracker.update_state(loss, sample_weight=sample_weight)
+    x_entropy_value = TauLosses.tau_crossentropy_v2(y, y_pred)
+    x_entropy.update_state(x_entropy_value, sample_weight=sample_weight)
+    mean_loss = (tf.reduce_sum(sample_weight * loss) / tf.reduce_sum(sample_weight))
+    return{"val_loss value": mean_loss, "val_loss metric": loss_tracker.result(), "val_x_entropy_metric": x_entropy.result()}
 
 
 
@@ -459,42 +487,47 @@ def run_training(model, data_loader, to_profile, log_suffix):
                                                      update_freq = ( 0 if data_loader.n_batches_log<=0 else data_loader.n_batches_log ))
     callbacks.append(tboard_callback)
 
-    
-
-    # epochs = data_loader.n_epochs
-    # for epoch in range(epochs):
-        
-    #     print("\nStart of epoch %d" % (epoch,))
-    #     start_time = time.time()
-    #     # Iterate over the batches of the dataset.
-    #     for step, (x, y, weights) in enumerate(data_train):
-    #         loss_value = train_step(x,y,model)
-    #         # Print every x batches.
-    #         if step % 10 == 0:
-    #             print(f"Training loss (for one batch) at step {step} : {np.sum((loss_value))}")
-    #             print("Seen so far: %d samples" % ((step + 1) * data_loader.batch_size))
-
-    #     # Display metrics at the end of each epoch:
-    #     metrics = {m.name: m.result() for m in model.metrics}
-    #     print(metrics)
-    #     # Reset metrics at end of epoch:
-    #     for m in model.metrics:
-    #         m.reset_state()
-
-        
-    #     print("VALIDATION --------------------------")
-    #     # Run a validation loop at the end of each epoch.
-    #     for (x, y, weights) in data_val:
-    #         test_step(x, y, model)
-
-    #     val_metrics = {m.name: m.result() for m in model.metrics}
-    #     print(val_metrics)
-    #     for m in model.metrics:
-    #         m.reset_state()
-
-    fit_hist = model.fit(data_train, validation_data = data_val,
+    if custom: 
+        fit_hist = model.fit(data_train, validation_data = data_val,
                          epochs = data_loader.n_epochs, initial_epoch = data_loader.epoch,
                          callbacks = callbacks)
+    
+    else:
+        loss_tracker = keras.metrics.Mean(name="manual_loss")
+        x_entropy = keras.metrics.Mean(name="x_entropy")
+
+        epochs = data_loader.n_epochs
+        for epoch in range(epochs):
+            
+            print("\nStart of epoch %d" % (epoch,))
+            # Iterate over the batches of the dataset.
+            for step, data in enumerate(data_train):
+                loss_value = train_step(data,model,loss_tracker,x_entropy)
+                # Print every x batches.
+                print(f"Training loss at step {step} : {(loss_value)}")
+                print("Seen so far: %d samples" % ((step + 1) * data_loader.batch_size))
+
+            # Display metrics at the end of each epoch:
+            #metrics = {m.name: m.result() for m in model.metrics}
+            #print(metrics)
+            # Reset metrics at end of epoch:
+            #for m in model.metrics:
+                #m.reset_state()
+
+            
+            print("VALIDATION --------------------------")
+            # Run a validation loop at the end of each epoch.
+            for data in data_val:
+                val_loss = test_step(data, model,loss_tracker,x_entropy)
+            print(val_loss)
+            # val_metrics = {m.name: m.result() for m in model.metrics}
+            # print(val_metrics)
+            # for m in model.metrics:
+            #     m.reset_state()
+            loss_tracker.reset_state()
+            x_entropy.reset_state()
+
+    
 
     model_path = f"{log_name}_final.tf"
     model.save(model_path, save_format="tf")
