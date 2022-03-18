@@ -63,8 +63,8 @@ class CustomModel(keras.Model):
             # (the loss function is configured in `compile()`)
             tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
             loss = tau_crossentropy_v2  # self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-            compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight) #, regularization_losses=self.losses)
-            print("Losses:", self.losses)
+            compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight, regularization_losses=self.losses)
+            print("Losses:", self.losses)  #reg loses
             reg_loss = self.losses
 
         # Compute gradients
@@ -98,7 +98,7 @@ class CustomModel(keras.Model):
         # Updates the metrics tracking the loss
         tau_crossentropy_v2 = TauLosses.tau_crossentropy_v2(y, y_pred)
         loss = tau_crossentropy_v2  #self.compiled_loss(y, y_pred, regularization_losses=self.losses)
-        compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight) #, regularization_losses=self.losses)
+        compiled_loss = self.compiled_loss(y, y_pred, sample_weight=sample_weight, regularization_losses=self.losses)
         reg_loss = self.losses # tf.compat.v1.losses.get_regularization_loss(name="reg_loss") # deosnt work properly
         # Update the metrics.
         self.loss_tracker().update_state(loss, sample_weight=sample_weight)
