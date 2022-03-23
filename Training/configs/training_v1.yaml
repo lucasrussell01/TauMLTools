@@ -20,7 +20,7 @@ Setup:
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
     rm_inner_from_outer  : False
-    input_type           : "tf" # supported 'ROOT' or 'tf'
+    input_type           : "ROOT" # supported 'ROOT' or 'tf'
     tf_input_dir         : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/tf_datasets/emb_21k_99cut" # path to saved tf dataset
     tf_dataset_x_order   : ["TauFlat", "inner_egamma", "inner_muon", "inner_hadron", "outer_egamma", "outer_muon", "outer_hadron"] # specify order of layers in tf dataset
 
@@ -64,11 +64,11 @@ Setup:
 
 SetupNN:
     model_name           : "DeepTau2018v0"
-    n_batches            : 200
-    n_batches_val        : 50
+    n_batches            : 500
+    n_batches_val        : 20
     n_batches_log        : 10 # monitor every n batches in tensorboard
     epoch                : 0
-    n_epochs             : 1
+    n_epochs             : 2
     validation_split     : 0.3
     max_queue_size       : 10
     n_load_workers       : 4
@@ -85,7 +85,7 @@ SetupNN:
     comp_merge_net       : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1.6, "first_layer_width": "n", "last_layer_width": 64 }
     conv_2d_net          : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": null, "window_size": 3 }
     dense_net            : { "activation": "PReLU", "dropout_rate": 0.2, "reduction_rate": 1, "first_layer_width": 200, "last_layer_width": 200, "min_n_layers": 4 }
-    first_layer_reg      : null #"L1, 10" # eg "L1, reg_fact"
+    first_layer_reg      : "L1, 0.01" # eg "L1, reg_fact"
     active_features      : ['TauFlat', 'GridGlobal', 'PfCand_electron', 'PfCand_muon', 'PfCand_chHad', 'PfCand_nHad', 'PfCand_gamma', 'Electron', 'Muon']
     cell_locations       : ['inner', 'outer']
 
