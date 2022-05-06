@@ -1,5 +1,5 @@
 Setup:
-    n_tau                :  100 # number of candidates in one batch
+    n_tau                :  50 # number of candidates in one batch
     iso_cone             :  0.5
     n_inner_cells        :  11
     inner_cell_size      :  0.02
@@ -14,7 +14,7 @@ Setup:
     DeepTauVSjet_cut     : -1.0 
     recompute_tautype    : False
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
-    input_dir            : "/home/russell/MuTau_dataset/Evaluate"
+    input_dir            : "/home/russell/MuTau_dataset/Train"
     input_spectrum       : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
     target_spectrum      : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
     weight_thr           : 100000.0
