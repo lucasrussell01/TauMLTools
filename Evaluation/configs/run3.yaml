@@ -25,9 +25,9 @@ cuts: ${apply_dm_cuts}
 # inputs/paths
 input_samples: # "sample_alias": [list of strings with tau types to be selected]
   GluGluHToTauTau: ['tau']
-  # TTToSemiLeptonic: ["jet"]
+  TTToSemiLeptonic: ["jet"]
   # DYJetsToLL: ["e"] 
-  DYJetsToLL: ["mu"] 
+  # DYJetsToLL: ["mu"] 
   # GluGluHToTauTau_M125: ['tau']
   # DYJetsToLL_M-50-amcatnloFXFX_ext2: ["e"]
 path_to_input: null
