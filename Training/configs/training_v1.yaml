@@ -27,7 +27,7 @@ Setup:
     adv_parameter        : [1, 10] # k1, k2 for gradients in common layers
     n_adv_tau            : 100 # number of candidates per adversarial batch
     adv_learning_rate    : 0.01
-    use_previous_opt     : True
+    use_previous_opt     : False
     # here define variables for the Histogram_2D class
     yaxis                : [
       20. , 30. , 40. , 50. , 60. , 70. , 80. , 90. , 100., 110.,
