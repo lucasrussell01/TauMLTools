@@ -55,7 +55,7 @@ class DeepTauModel(keras.Model):
             # self.adv_loss = TauLosses.focal_adversarial
             # self.gamma = 0.5
             self.adv_accuracy = tf.keras.metrics.BinaryAccuracy(name="adv_accuracy") 
-            self.adv_optimizer = tf.keras.optimizers.Nadam(learning_rate=adv_learning_rate)
+            self.adv_optimizer = tf.keras.optimizers.Nadam(learning_rate=adv_learning_rate, decay=0.00338)
             self.n_adv_tau = n_adv_tau
             self.mean_grad_class= keras.metrics.Mean(name="mean_grad_class")
             self.mean_grad_adv= keras.metrics.Mean(name="mean_grad_adv")
@@ -466,7 +466,7 @@ def create_model(net_config, model_name, loss=None, use_AdvDataset = False, adv_
 
 def compile_model(model, opt_name, learning_rate):
     # opt = keras.optimizers.Adam(lr=learning_rate)
-    opt = getattr(tf.keras.optimizers, opt_name)(learning_rate=learning_rate)
+    opt = getattr(tf.keras.optimizers, opt_name)(learning_rate=learning_rate, decay=0.00338)
         
     #opt = tf.keras.optimizers.Nadam(learning_rate=learning_rate, schedule_decay=1e-4)
     # opt = Nadam(lr=learning_rate, beta_1=1e-4)
@@ -557,7 +557,7 @@ def run_training(model, data_loader, to_profile, log_suffix, old_opt=None):
             break
         old_weights = [np.empty(()), np.empty(())] + old_opt.get_weights()
         model.optimizer.set_weights(old_weights)
-        model.optimizer.iterations.assign_add(1246720)
+        model.optimizer.iterations.assign_add(0)
         print("Previous Optimizer weights restored")
 
     model_name = data_loader.model_name
