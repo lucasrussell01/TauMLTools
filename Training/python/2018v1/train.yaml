@@ -18,7 +18,7 @@ pretrained:
 # setup
 scaling_cfg: ../../configs/ShuffleMergeSpectral_trainingSamples-2_files_0_498.json # for DataLoader initialisation
 gpu_cfg:
-  gpu_mem  : 6.5 # in Gb
+  gpu_mem  : 7.0 # in Gb
   gpu_index: 0
 
 # logs
