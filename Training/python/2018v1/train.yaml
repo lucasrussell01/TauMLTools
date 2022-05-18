@@ -12,13 +12,13 @@ experiment_name: ???
 # pretrained: null
 pretrained:
   run_id : 5371f5d7080846c1a213f0e648471c11
-  experiment_id: 12
+  experiment_id: 4
   starting_model: full_v2_e4_NAdam_2_step1_e1.tf
 
 # setup
 scaling_cfg: ../../configs/ShuffleMergeSpectral_trainingSamples-2_files_0_498.json # for DataLoader initialisation
 gpu_cfg:
-  gpu_mem  : 7.0 # in Gb
+  gpu_mem  : 7 # in Gb
   gpu_index: 0
 
 # logs

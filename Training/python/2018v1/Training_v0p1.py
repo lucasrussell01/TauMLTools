@@ -55,8 +55,10 @@ class DeepTauModel(keras.Model):
             # self.adv_loss = TauLosses.focal_adversarial
             # self.gamma = 0.5
             self.adv_accuracy = tf.keras.metrics.BinaryAccuracy(name="adv_accuracy") 
-            decay_rate = 0.00338
-            self.adv_optimizer = tf.keras.optimizers.Nadam(learning_rate=adv_learning_rate, decay=decay_rate)
+            decay_rate = 443.219
+            lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(adv_learning_rate, decay_steps=decay_rate, decay_rate=0.96)
+            self.adv_optimizer = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+            # self.adv_optimizer = tf.keras.optimizers.Nadam(learning_rate=adv_learning_rate, decay=decay_rate)
             print("Adversarial decay rate:", decay_rate)
             self.n_adv_tau = n_adv_tau
             self.mean_grad_class= keras.metrics.Mean(name="mean_grad_class")
@@ -468,8 +470,11 @@ def create_model(net_config, model_name, loss=None, use_AdvDataset = False, adv_
 
 def compile_model(model, opt_name, learning_rate):
     # opt = keras.optimizers.Adam(lr=learning_rate)
-    decay_rate = 0.00338
-    opt = getattr(tf.keras.optimizers, opt_name)(learning_rate=learning_rate, decay=decay_rate)
+    decay_rate = 443.219
+    lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(learning_rate, decay_steps=decay_rate, decay_rate=0.96)
+    opt = tf.keras.optimizers.Adam(learning_rate=lr_schedule)
+
+    # opt = getattr(tf.keras.optimizers, opt_name)(learning_rate=learning_rate, decay=decay_rate)
     print("Main decay rate: ", decay_rate)
         
     #opt = tf.keras.optimizers.Nadam(learning_rate=learning_rate, schedule_decay=1e-4)
