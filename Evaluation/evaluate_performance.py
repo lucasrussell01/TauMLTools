@@ -48,6 +48,7 @@ def main(cfg: DictConfig) -> None:
         # loop over all input files per sample with associated predictions/targets (if present) and combine together into df
         print(f'[INFO] Creating dataframe for sample: {sample_alias}')
         for input_file, pred_file, target_file in zip(input_files, pred_files, target_files):
+            print("FILE:", input_file)
             df = eval_tools.create_df(input_file, input_branches, pred_file, target_file, None, # weights functionality is WIP
                                             cfg.discriminator.pred_column_prefix, cfg.discriminator.target_column_prefix)
             gen_selection = ' or '.join([f'(gen_{tau_type}==1)' for tau_type in tau_types]) # gen_* are constructed in `add_targets()`
