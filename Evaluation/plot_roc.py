@@ -103,6 +103,7 @@ class PlotSetup:
     def Apply(self, names, entries, ax, ax_ratio = None):
         if self.xlim is not None:
             ax.set_xlim(self.xlim)
+            ax.set_xlim([0.95, 1])
         if self.ylim is not None:
             ax.set_ylim(self.ylim)
             # ax.set_ylim([1e-4, 1])
