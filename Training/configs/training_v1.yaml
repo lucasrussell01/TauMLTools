@@ -14,21 +14,21 @@ Setup:
     DeepTauVSjet_cut     : -1.0 
     recompute_tautype    : True
     include_mismatched   : False # whether to keep tau candidates with tau_type not present in `tau_types_names`
-    input_dir            : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_trainingSamples-2_rerun/"
-    input_spectrum       : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
-    target_spectrum      : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    input_dir            : "/vols/cms/lcr119/tuples/ShuffleMerge"
+    input_spectrum       : "/vols/cms/lcr119/tuples/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
+    target_spectrum      : "/vols/cms/lcr119/tuples/ShuffleMergeSpectral_TrainingSpectrum/ShuffleMergeSpectral_trainingSamples-2_rerun.root"
     weight_thr           : 100000.0
     dataloader_core      : "TauMLTools/Training/interface/DataLoader_main.h"
     rm_inner_from_outer  : False
     input_type           : "ROOT" # supported: 'ROOT', 'tf', 'Adversarial', 'AdversarialGenerate'
     tf_input_dir         : /eos/cms/store/group/phys_tau/TauML/prod_2018_v2/tf_datasets/emb_21k_99cut # path to saved tf dataset
     tf_dataset_x_order   : ["TauFlat", "inner_egamma", "inner_muon", "inner_hadron", "outer_egamma", "outer_muon", "outer_hadron"] # specify order of layers in tf dataset
-    adversarial_dataset  : "/eos/cms/store/group/phys_tau/TauML/prod_2018_v2/adversarial_datasets/AdvTraining" # False if not use, ds name if use
+    adversarial_dataset  : "/vols/cms/lcr119/tuples/AdversarialDeepTau/AdvTraining" # False if not use, ds name if use
     adv_parameter        : [1, 10] # k1, k2 for gradients in common layers
     n_adv_tau            : 100 # number of candidates per adversarial batch
     adv_learning_rate    : 0.01
     use_previous_opt     : False
-    adversarial_weights  : "/home/russell/AdversarialTauML/TauMLTools/adv_weights.root" # weights for adversarial dataset generation
+    adversarial_weights  : "/vols/cms/lcr119/tuples/AdversarialDeepTau/adv_weights.root" # weights for adversarial dataset generation
 
     # here define variables for the Histogram_2D class
     yaxis                : [
@@ -71,7 +71,7 @@ Setup:
 SetupNN:
     model_name           : "DeepTau2018v0"
     n_batches            : 80000
-    n_batches_val        : 80000
+    n_batches_val        : 20000
     n_batches_log        : 1000 # monitor every n batches in tensorboard
     epoch                : 0
     n_epochs             : 1

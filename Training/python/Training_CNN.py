@@ -20,7 +20,8 @@ from tensorflow.keras.callbacks import Callback, ModelCheckpoint, CSVLogger, Lea
 from datetime import datetime
 
 import mlflow
-from mlflow.tracking.context.git_context import _get_git_commit
+# from mlflow.tracking.context.git_context import _get_git_commit
+import mlflow.tensorflow 
 mlflow.tensorflow.autolog(log_models=False)
 
 import hydra
@@ -638,16 +639,17 @@ def run_training(model, data_loader, to_profile, log_suffix, newloss, old_opt=No
         #    gen_upd, output_types = input_types, output_shapes = input_shape
         #    ).prefetch(tf.data.AUTOTUNE)
     elif data_loader.input_type == "Adversarial":
+        print("DEBUG LUCAS: INPUT TYPE IS ADVERSARIAL")
         gen_train = data_loader.get_generator(primary_set = True, return_weights = data_loader.use_weights, adversarial=True)
         gen_val = data_loader.get_generator(primary_set = False, return_weights = data_loader.use_weights, adversarial=True)
         adv_shape = (((None, 43), (None, 11, 11, 86), (None, 11, 11, 64), (None, 11, 11, 38), (None, 21, 21, 86), (None, 21, 21, 64), (None, 21, 21, 38)), (None, 4), None, None, None)
         adv_type = ((tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32, tf.float32), tf.float32, tf.float32, tf.float32, tf.float32)
         data_train = tf.data.Dataset.from_generator(
             gen_train, output_types = adv_type, output_shapes = adv_shape
-            ).prefetch(4)
+            )#.prefetch(4)
         data_val = tf.data.Dataset.from_generator(
             gen_val, output_types = adv_type, output_shapes = adv_shape
-            ).prefetch(4)
+            )#.prefetch(4)
 
     else:
         raise RuntimeError("Input type not supported, please select 'ROOT', 'tf' or 'Adversarial'")
@@ -786,7 +788,7 @@ def main(cfg: DictConfig) -> None:
 
         # log misc. info
         mlflow.log_param('run_id', run_id)
-        mlflow.log_param('git_commit', _get_git_commit(to_absolute_path('.')))
+        # mlflow.log_param('git_commit', _get_git_commit(to_absolute_path('.')))
         print(f'\nTraining has finished! Corresponding MLflow experiment name (ID): {cfg.experiment_name}({run_kwargs["experiment_id"]}), and run ID: {run_id}\n')
         mlflow.end_run()
 

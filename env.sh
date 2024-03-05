@@ -133,12 +133,12 @@ elif [[ $MODE = "conda" ]]; then
         fi
         unset __conda_setup
     fi
-    tau_env_found=$(conda env list | grep -E '^tau-ml .*' | wc -l)
+    tau_env_found=$(conda env list | grep -E '^tau-ml-old .*' | wc -l)
     if (( $tau_env_found != 1 )); then
-        echo "Creating tau-ml environment..."
+        echo "Creating tau-ml-old environment..."
         run_cmd conda env create -f $BASE_PATH/tau-ml-env.yaml
     fi
-    run_cmd conda activate tau-ml
+    run_cmd conda activate tau-ml-old
     ARG="$2"
     if [[ $ARG = "--update" ]]; then
         ENV_YAML="$3"
@@ -149,7 +149,7 @@ elif [[ $MODE = "conda" ]]; then
         run_cmd conda env update --file $ENV_YAML --prune
     fi
     TAU_ML_DIR=$(cd $(dirname $(which python))/..; pwd)
-    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TAU_ML_DIR/lib
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/vols/cms/lcr119/miniforge3/envs/tau-ml-old/lib
 elif [[ $MODE = "lcg" ]]; then
     run_cmd source /cvmfs/sft.cern.ch/lcg/views/setupViews.sh LCG_101cuda x86_64-centos7-gcc10-opt
 else
