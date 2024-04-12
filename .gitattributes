@@ -1,0 +1,4 @@
+Analysis/notebooks/** linguist-vendored
+Evaluation/notebooks/** linguist-vendored
+Training/notebooks/2017v1/** linguist-vendored
+Training/notebooks/2017v2/** linguist-vendored
